@@ -33,4 +33,7 @@ router.get("/logout", (req, res) => {
   });
 });
 
+
+console.log("OAuth redirecting to:", process.env.FRONTEND_URL);
+
 export default router;

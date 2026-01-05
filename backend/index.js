@@ -167,6 +167,7 @@ app.post("/invite", async (req, res) => {
     res.json({
       inviteLink: `${process.env.FRONTEND_URL}/verify?token=${token}`,
     });
+    
   } catch (err) {
     console.error("Invite error:", err.message);
     res.status(500).json({ error: "Failed to generate invite" });
