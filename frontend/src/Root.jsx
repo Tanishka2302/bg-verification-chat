@@ -14,13 +14,16 @@ function ProtectedRoute({ children }) {
     fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
       credentials: "include",
     })
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        if (!res.ok) throw new Error("Not authenticated");
+        return res.json();
+      })
       .then((data) => {
-        setUser(data);
+        setUser(data);       // ✅ user exists
         setLoading(false);
       })
       .catch(() => {
-        setUser(null);
+        setUser(null);       // ❌ not logged in
         setLoading(false);
       });
   }, []);
@@ -34,7 +37,7 @@ function ProtectedRoute({ children }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
   return children;
@@ -45,9 +48,11 @@ function Root() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
 
+        {/* Protected */}
         <Route
           path="/verify"
           element={
