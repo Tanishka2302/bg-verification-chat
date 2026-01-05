@@ -11,16 +11,18 @@ function ProtectedRoute({ children }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:5000/auth/me", {
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
       credentials: "include",
     })
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => res.json())
       .then((data) => {
-        setUser(data);
-        setLoading(false);
+        // handle user
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        // handle error / not logged in
+      });
   }, []);
+  
 
   if (loading) {
     return (
