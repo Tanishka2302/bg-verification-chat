@@ -7,7 +7,6 @@ import jwt from "jsonwebtoken";
 import pool from "./db.js";
 import passport from "passport";
 import session from "express-session";
-
 import authRoutes from "./routes/auth.js";
 import "./passport.js";
 
@@ -17,27 +16,23 @@ const app = express();
 const server = http.createServer(app);
 
 /* ===============================
-   MIDDLEWARE (ORDER MATTERS)
+   MIDDLEWARE
 ================================ */
 
+// CORS (frontend + dev)
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://bg-verification-chat.vercel.app",
+    ],
     credentials: true,
   })
 );
 
-// TEMP AUTH
-app.get("/auth/me", (req, res) => {
-  res.json({
-    id: "dev-hr",
-    name: "HR User",
-    role: "HR",
-  });
-});
-
 app.use(express.json());
 
+// Session (required for Passport)
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
@@ -52,14 +47,19 @@ app.use(passport.session());
 /* ===============================
    ROUTES
 ================================ */
+
 app.use("/auth", authRoutes);
 
 /* ===============================
-   SOCKET.IO SETUP
+   SOCKET.IO SETUP (ONLY ONCE)
 ================================ */
+
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://bg-verification-chat.vercel.app",
+    ],
     credentials: true,
   },
 });
@@ -67,6 +67,7 @@ const io = new Server(server, {
 /* ===============================
    CONSTANTS
 ================================ */
+
 const TOTAL_QUESTIONS = 5;
 
 const VERIFICATION_QUESTIONS = [
@@ -80,6 +81,7 @@ const VERIFICATION_QUESTIONS = [
 /* ===============================
    HELPERS
 ================================ */
+
 async function updateVerificationStatus(roomId) {
   const res = await pool.query(
     `SELECT COUNT(*)
@@ -107,8 +109,9 @@ async function updateVerificationStatus(roomId) {
 }
 
 /* ===============================
-   REST ROUTES
+   REST API
 ================================ */
+
 app.get("/rooms/:roomId/messages", async (req, res) => {
   try {
     const result = await pool.query(
@@ -118,6 +121,7 @@ app.get("/rooms/:roomId/messages", async (req, res) => {
        ORDER BY created_at`,
       [req.params.roomId]
     );
+
     res.json(result.rows);
   } catch (err) {
     console.error(err.message);
@@ -159,154 +163,154 @@ app.post("/invite", async (req, res) => {
     );
 
     res.json({
-      inviteLink: `http://localhost:5173/verify?token=${token}`,
+      inviteLink: `${process.env.FRONTEND_URL}/verify?token=${token}`,
     });
   } catch (err) {
     console.error("Invite error:", err.message);
     res.status(500).json({ error: "Failed to generate invite" });
   }
 });
+
 /* ===============================
    SOCKET EVENTS
 ================================ */
+
 io.on("connection", (socket) => {
-    console.log("Connected:", socket.id);
-  
-    socket.role = "HR";
-    socket.roomId = null;
-  
-    /* ---- REFEREE JOIN (TOKEN BASED) ---- */
-    socket.on("join_with_token", async (token) => {
-      try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET);
-  
-        const roomRes = await pool.query(
-          `SELECT expires_at, is_closed
-           FROM verification_rooms
-           WHERE id = $1`,
-          [payload.roomId]
-        );
-  
-        if (roomRes.rowCount === 0)
-          return socket.emit("error", "Room not found");
-  
-        const { expires_at, is_closed } = roomRes.rows[0];
-  
-        if (is_closed)
-          return socket.emit("error", "Verification completed");
-  
-        if (expires_at && new Date(expires_at) < new Date())
-          return socket.emit("error", "Invite expired");
-  
-        socket.role = "REFEREE";
-        socket.roomId = payload.roomId;
-        socket.join(payload.roomId);
-  
-        console.log(`Socket ${socket.id} joined room ${payload.roomId}`);
-  
-        socket.emit("joined_room", {
-          roomId: payload.roomId,
-          role: "REFEREE",
-        });
-      } catch {
-        socket.emit("error", "Invalid or expired invite");
-      }
-    });
-  
-    /* ---- CREATE ROOM (HR) ---- */
-    socket.on("create_room", async ({ candidateId }) => {
-      try {
-        const result = await pool.query(
-          `INSERT INTO verification_rooms (candidate_id, expires_at)
-           VALUES ($1, NOW() + INTERVAL '3 hours')
-           RETURNING id`,
-          [candidateId]
-        );
-  
-        const roomId = result.rows[0].id;
-  
-        socket.role = "HR";
-        socket.roomId = roomId;
-        socket.join(roomId);
-  
-        console.log(`Socket ${socket.id} joined room ${roomId}`);
-  
-        socket.emit("room_created", { roomId });
-  
-        for (const q of VERIFICATION_QUESTIONS) {
-          await pool.query(
-            `INSERT INTO messages (room_id, sender_role, content)
-             VALUES ($1,'SYSTEM',$2)`,
-            [roomId, q]
-          );
-        }
-  
-        io.to(roomId).emit("verification_progress", {
-          answered: 0,
-          status: "pending",
-        });
-      } catch (err) {
-        console.error("Create room error:", err.message);
-      }
-    });
-  
-    /* ---- HR REJOIN EXISTING ROOM ---- */
-    socket.on("join_existing_room", async (roomId) => {
+  console.log("🟢 Socket connected:", socket.id);
+
+  socket.role = "HR";
+  socket.roomId = null;
+
+  /* ---- REFEREE JOIN VIA TOKEN ---- */
+  socket.on("join_with_token", async (token) => {
+    try {
+      const payload = jwt.verify(token, process.env.JWT_SECRET);
+
       const roomRes = await pool.query(
         `SELECT expires_at, is_closed
          FROM verification_rooms
          WHERE id = $1`,
-        [roomId]
+        [payload.roomId]
       );
-  
+
       if (roomRes.rowCount === 0)
-        return socket.emit("force_create_room");
-  
+        return socket.emit("error", "Room not found");
+
       const { expires_at, is_closed } = roomRes.rows[0];
-  
-      if (is_closed || (expires_at && new Date(expires_at) < new Date()))
-        return socket.emit("force_create_room");
-  
+
+      if (is_closed)
+        return socket.emit("error", "Verification completed");
+
+      if (expires_at && new Date(expires_at) < new Date())
+        return socket.emit("error", "Invite expired");
+
+      socket.role = "REFEREE";
+      socket.roomId = payload.roomId;
+      socket.join(payload.roomId);
+
+      socket.emit("joined_room", {
+        roomId: payload.roomId,
+        role: "REFEREE",
+      });
+    } catch {
+      socket.emit("error", "Invalid or expired invite");
+    }
+  });
+
+  /* ---- CREATE ROOM (HR) ---- */
+  socket.on("create_room", async ({ candidateId }) => {
+    try {
+      const result = await pool.query(
+        `INSERT INTO verification_rooms (candidate_id, expires_at)
+         VALUES ($1, NOW() + INTERVAL '3 hours')
+         RETURNING id`,
+        [candidateId]
+      );
+
+      const roomId = result.rows[0].id;
+
       socket.role = "HR";
       socket.roomId = roomId;
       socket.join(roomId);
-  
-      console.log(`Socket ${socket.id} joined room ${roomId}`);
-  
-      socket.emit("joined_room", { roomId, role: "HR" });
-    });
-  
-    /* ---- SEND MESSAGE (FIXED & FINAL) ---- */
-    socket.on("send_message", async ({ text, questionIndex }) => {
-      if (!socket.roomId || !text) return;
-  
-      const isAnswer = socket.role === "REFEREE";
-  
-      await pool.query(
-        `INSERT INTO messages
-         (room_id, sender_role, content, is_answer, question_index)
-         VALUES ($1,$2,$3,$4,$5)`,
-        [socket.roomId, socket.role, text, isAnswer, questionIndex]
-      );
-  
-      const progress = await updateVerificationStatus(socket.roomId);
-  
-      io.to(socket.roomId).emit("receive_message", {
-        sender: socket.role,
-        text,
-        is_answer: isAnswer,
-        question_index: questionIndex,
+
+      socket.emit("room_created", { roomId });
+
+      for (const q of VERIFICATION_QUESTIONS) {
+        await pool.query(
+          `INSERT INTO messages (room_id, sender_role, content)
+           VALUES ($1,'SYSTEM',$2)`,
+          [roomId, q]
+        );
+      }
+
+      io.to(roomId).emit("verification_progress", {
+        answered: 0,
+        status: "pending",
       });
-  
-      io.to(socket.roomId).emit("verification_progress", progress);
-    });
+    } catch (err) {
+      console.error("Create room error:", err.message);
+    }
   });
-  
+
+  /* ---- HR REJOIN ---- */
+  socket.on("join_existing_room", async (roomId) => {
+    const roomRes = await pool.query(
+      `SELECT expires_at, is_closed
+       FROM verification_rooms
+       WHERE id = $1`,
+      [roomId]
+    );
+
+    if (roomRes.rowCount === 0)
+      return socket.emit("force_create_room");
+
+    const { expires_at, is_closed } = roomRes.rows[0];
+
+    if (is_closed || (expires_at && new Date(expires_at) < new Date()))
+      return socket.emit("force_create_room");
+
+    socket.role = "HR";
+    socket.roomId = roomId;
+    socket.join(roomId);
+
+    socket.emit("joined_room", { roomId, role: "HR" });
+  });
+
+  /* ---- SEND MESSAGE ---- */
+  socket.on("send_message", async ({ text, questionIndex }) => {
+    if (!socket.roomId || !text) return;
+
+    const isAnswer = socket.role === "REFEREE";
+
+    await pool.query(
+      `INSERT INTO messages
+       (room_id, sender_role, content, is_answer, question_index)
+       VALUES ($1,$2,$3,$4,$5)`,
+      [socket.roomId, socket.role, text, isAnswer, questionIndex]
+    );
+
+    const progress = await updateVerificationStatus(socket.roomId);
+
+    io.to(socket.roomId).emit("receive_message", {
+      sender: socket.role,
+      text,
+      is_answer: isAnswer,
+      question_index: questionIndex,
+    });
+
+    io.to(socket.roomId).emit("verification_progress", progress);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("🔴 Socket disconnected:", socket.id);
+  });
+});
+
 /* ===============================
    SERVER START
 ================================ */
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+  console.log("🚀 Server running on port", PORT);
 });
