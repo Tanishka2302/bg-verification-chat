@@ -22,7 +22,24 @@ function App() {
   const params = new URLSearchParams(window.location.search);
   const inviteToken = params.get("token");
   const candidateId = "c819ebdf-9f1e-4229-bd47-481015e361e8";
-
+  const [authChecked, setAuthChecked] = useState(false);
+  const [user, setUser] = useState(null);
+  
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/auth/me`, {
+      credentials: "include",
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        setUser(data);
+        setAuthChecked(true);
+      })
+      .catch(() => {
+        setUser(null);
+        setAuthChecked(true);
+      });
+  }, []);
+  
   /* ================= SOCKET SETUP ================= */
   useEffect(() => {
     if (socketRef.current) return;
@@ -144,7 +161,21 @@ function App() {
         Connecting…
       </div>
     );
+
   }
+  if (!authChecked) {
+    return (
+      <div className="h-screen flex items-center justify-center text-gray-500">
+        Checking session…
+      </div>
+    );
+  }
+  
+  if (!user && !inviteToken) {
+    window.location.href = "/login";
+    return null;
+  }
+  
  
 
   /* ================= UI ================= */

@@ -63,14 +63,8 @@ function Root() {
         <Route path="/login" element={<Login />} />
 
         {/* Protected */}
-        <Route
-          path="/verify"
-          element={
-            <ProtectedRoute>
-              <App />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/verify" element={<App />} />
+
       </Routes>
     </BrowserRouter>
   );
