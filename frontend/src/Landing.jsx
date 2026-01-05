@@ -5,9 +5,11 @@ function Landing() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Read token from current URL (safe for prod & local)
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
 
+    // If referee opens invite link → redirect internally to /verify
     if (token) {
       navigate(`/verify?token=${token}`, { replace: true });
     }
@@ -15,7 +17,6 @@ function Landing() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-
       {/* ===== Background ===== */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700" />
       <div className="absolute inset-0 bg-black/20" />
@@ -23,7 +24,6 @@ function Landing() {
       {/* ===== Content ===== */}
       <div className="relative z-10 w-full max-w-lg px-6">
         <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 sm:p-10 text-center">
-
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
             Background Verification
           </h1>
@@ -42,7 +42,6 @@ function Landing() {
             I am HR — Start Verification
           </button>
 
-          {/* subtle footer */}
           <p className="mt-6 text-sm text-gray-400">
             Trusted • Secure • Real-time
           </p>

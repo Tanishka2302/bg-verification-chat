@@ -14,15 +14,16 @@ function ProtectedRoute({ children }) {
     fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
       credentials: "include",
     })
-      .then((res) => res.json())
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        // handle user
+        setUser(data);
+        setLoading(false);
       })
       .catch(() => {
-        // handle error / not logged in
+        setUser(null);
+        setLoading(false);
       });
   }, []);
-  
 
   if (loading) {
     return (
@@ -44,13 +45,17 @@ function Root() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
 
-        {/* HR only */}
-        <Route path="/verify" element={<App />} />
-
+        <Route
+          path="/verify"
+          element={
+            <ProtectedRoute>
+              <App />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
