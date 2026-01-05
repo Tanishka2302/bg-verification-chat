@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { motion } from "framer-motion";
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
 function App() {
   const socketRef = useRef(null);
 
@@ -10,6 +12,8 @@ function App() {
   const [message, setMessage] = useState("");
   const [role, setRole] = useState("HR");
   const [connected, setConnected] = useState(false);
+  const [inviteLink, setInviteLink] = useState("");
+
   const [progress, setProgress] = useState({
     answered: 0,
     status: "pending",
@@ -19,28 +23,23 @@ function App() {
   const inviteToken = params.get("token");
   const candidateId = "c819ebdf-9f1e-4229-bd47-481015e361e8";
 
+  /* ================= SOCKET SETUP ================= */
   useEffect(() => {
     if (socketRef.current) return;
 
-    const socket = io(import.meta.env.VITE_BACKEND_URL, {
-      withCredentials: true,
-    });
-
+    const socket = io(BACKEND_URL, { withCredentials: true });
     socketRef.current = socket;
 
     socket.on("connect", () => {
-      console.log("🟢 Connected", socket.id);
       setConnected(true);
 
       if (inviteToken) {
         socket.emit("join_with_token", inviteToken);
       } else {
         const savedRoom = localStorage.getItem("roomId");
-        if (savedRoom) {
-          socket.emit("join_existing_room", savedRoom);
-        } else {
-          socket.emit("create_room", { candidateId });
-        }
+        savedRoom
+          ? socket.emit("join_existing_room", savedRoom)
+          : socket.emit("create_room", { candidateId });
       }
     });
 
@@ -59,21 +58,13 @@ function App() {
     socket.on("receive_message", (msg) => {
       setChat((prev) => [
         ...prev,
-        {
-          ...msg,
-          sender: msg.sender || msg.sender_role,
-        },
+        { ...msg, sender: msg.sender || msg.sender_role },
       ]);
     });
 
-    socket.on("verification_progress", (data) => {
-      setProgress(data);
-    });
+    socket.on("verification_progress", setProgress);
 
-    socket.on("disconnect", () => {
-      console.log("🔴 Disconnected");
-      setConnected(false);
-    });
+    socket.on("disconnect", () => setConnected(false));
 
     return () => {
       socket.off();
@@ -82,36 +73,49 @@ function App() {
     };
   }, [inviteToken]);
 
-
-  /* ================= LOAD HISTORY ================= */
+  /* ================= LOAD CHAT HISTORY ================= */
   useEffect(() => {
     if (!roomId) return;
 
-    fetch(`http://localhost:5000/rooms/${roomId}/messages`)
+    fetch(`${BACKEND_URL}/rooms/${roomId}/messages`, {
+      credentials: "include",
+    })
       .then((res) => res.json())
       .then((data) => setChat(Array.isArray(data) ? data : []))
       .catch(() => setChat([]));
   }, [roomId]);
 
+  /* ================= QUESTION LOGIC ================= */
+  const systemQuestions = chat.filter((m) => m.sender === "SYSTEM");
+  const refereeAnswers = chat.filter(
+    (m) => m.sender === "REFEREE" && m.is_answer
+  );
+
+  const answeredCount = Math.min(
+    refereeAnswers.length,
+    systemQuestions.length
+  );
+
   /* ================= SEND MESSAGE ================= */
   const sendMessage = (text) => {
-    if (!text.trim()) return;
-  
+    if (!text.trim() || !socketRef.current) return;
+
     socketRef.current.emit("send_message", {
       text,
-      questionIndex:
-        role === "REFEREE" ? answeredCount : null,
+      questionIndex: role === "REFEREE" ? answeredCount : null,
     });
+
+    setMessage("");
   };
-  
 
   /* ================= CREATE INVITE ================= */
   const createInvite = async () => {
     if (!roomId) return;
 
-    const res = await fetch("http://localhost:5000/invite", {
+    const res = await fetch(`${BACKEND_URL}/invite`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ roomId }),
     });
 
@@ -120,21 +124,11 @@ function App() {
     if (data.inviteLink) {
       setInviteLink(data.inviteLink);
       navigator.clipboard.writeText(data.inviteLink);
-      alert("Invite link copied to clipboard!");
+      alert("Invite link copied!");
     }
   };
 
-  /* ================= QUESTION LOGIC ================= */
-  const systemQuestions = chat.filter((m) => m.sender === "SYSTEM");
-  const answeredCount = Math.min(
-    chat.filter((m) => m.sender === "REFEREE" && m.is_answer).length,
-    systemQuestions.length
-  );
-  
-  const currentQuestion = systemQuestions[answeredCount];
-  
-
-  /* ================= LOADING GUARD ================= */
+  /* ================= LOADING ================= */
   if (!connected) {
     return (
       <div className="h-screen flex items-center justify-center text-gray-500">
@@ -142,16 +136,9 @@ function App() {
       </div>
     );
   }
-  // 🔹 helper: map referee answer → correct system question
-  const refereeAnswers = chat.filter(
-    (m) => m.sender === "REFEREE" && m.is_answer
-  );
-  
 
-  const getRelatedQuestion = (msg) => {
-    const index = refereeAnswers.indexOf(msg);
-    return systemQuestions[index];
-  };
+ 
+
   /* ================= UI ================= */
 return (
   <motion.div
