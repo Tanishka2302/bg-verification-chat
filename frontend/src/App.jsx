@@ -42,16 +42,7 @@ function App() {
           : socket.emit("create_room", { candidateId });
       }
     });
-    socket.on("room_created", ({ roomId }) => {
-      console.log("ROOM CREATED:", roomId);
-      setRoomId(roomId);
-    });
-    socket.on("joined_room", ({ roomId, role }) => {
-      console.log("JOINED ROOM:", roomId, role);
-      setRoomId(roomId);
-      setRole(role);
-    });
-        
+
     socket.on("joined_room", ({ roomId, role }) => {
       setRoomId(roomId);
       setRole(role);
@@ -94,8 +85,9 @@ function App() {
       .catch(() => setChat([]));
   }, [roomId]);
 
-  /* ================= QUESTION LOGIC ================= */
+  /* ================= QUESTION LOGIC (🔥 MISSING PART FIXED 🔥) ================= */
   const systemQuestions = chat.filter((m) => m.sender === "SYSTEM");
+
   const refereeAnswers = chat.filter(
     (m) => m.sender === "REFEREE" && m.is_answer
   );
@@ -104,6 +96,14 @@ function App() {
     refereeAnswers.length,
     systemQuestions.length
   );
+
+  const currentQuestion =
+    systemQuestions[answeredCount] || null;
+
+  const getRelatedQuestion = (msg) => {
+    const index = refereeAnswers.indexOf(msg);
+    return systemQuestions[index] || null;
+  };
 
   /* ================= SEND MESSAGE ================= */
   const sendMessage = (text) => {
@@ -145,7 +145,6 @@ function App() {
       </div>
     );
   }
-
  
 
   /* ================= UI ================= */
