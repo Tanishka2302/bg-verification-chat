@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { motion } from "framer-motion";
+import { io } from "socket.io-client";
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+const socket = io(BACKEND_URL, {
+  withCredentials: true,
+});
 
 const params = new URLSearchParams(window.location.search);
 const inviteToken = params.get("token");
@@ -30,13 +37,7 @@ function App() {
    /* const socket = io("http://localhost:5000", {
       transports: ["websocket"],
     });*/
-    const socket = io(import.meta.env.VITE_BACKEND_URL, {
-      withCredentials: true,
-    });
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-const socket = io(BACKEND_URL, {
-  withCredentials: true,
-});
+ 
 
 
     socketRef.current = socket;
