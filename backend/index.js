@@ -20,15 +20,17 @@ const server = http.createServer(app);
 ================================ */
 
 // CORS (frontend + dev)
+
 app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://bg-verification-chat.vercel.app",
-    ],
-    credentials: true,
-  })
-);
+    cors({
+      origin: [
+        "http://localhost:5173",
+        "https://bg-verification-chat.vercel.app",
+      ],
+      credentials: true,
+    })
+  );
+  
 
 app.use(express.json());
 
