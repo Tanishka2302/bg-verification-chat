@@ -19,17 +19,18 @@ function Login() {
             </p>
   
             <a
-              href="http://localhost:5000/auth/google"
-              className="w-full inline-flex justify-center items-center gap-3
-                bg-blue-600 text-white text-lg font-medium
-                px-6 py-4 rounded-xl
-                hover:bg-blue-700 active:scale-[0.98]
-                transition-all duration-200 shadow-md"
-            >
-              {/* Google icon feel (optional, no SVG needed) */}
-              <span className="text-xl">🔐</span>
-              Sign in with Google
-            </a>
+                href={`${import.meta.env.VITE_BACKEND_URL}/auth/google`}
+                className="w-full inline-flex justify-center items-center gap-3
+                    bg-blue-600 text-white text-lg font-medium
+                    px-6 py-4 rounded-xl
+                    hover:bg-blue-700 active:scale-[0.98]
+                    transition-all duration-200 shadow-md"
+                >
+                {/* Google icon feel */}
+                <span className="text-xl">🔐</span>
+                Sign in with Google
+             </a>
+
   
             {/* subtle footer */}
             <p className="mt-6 text-sm text-gray-400">
