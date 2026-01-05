@@ -8,41 +8,21 @@ import App from "./App";
 /* ================= PROTECTED ROUTE ================= */
 function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(undefined); // 👈 undefined, not null
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/auth/me`,
-          { credentials: "include" }
-        );
-
-        if (!res.ok) throw new Error("unauthorized");
-
-        const data = await res.json();
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
+      credentials: "include",
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
         setUser(data);
-      } catch {
-        // ⏳ allow hydration delay
-        setTimeout(async () => {
-          try {
-            const res = await fetch(
-              `${import.meta.env.VITE_BACKEND_URL}/auth/me`,
-              { credentials: "include" }
-            );
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            setUser(data);
-          } catch {
-            setUser(null);
-          }
-        }, 300);
-      } finally {
         setLoading(false);
-      }
-    };
-
-    checkAuth();
+      })
+      .catch(() => {
+        setUser(null);
+        setLoading(false);
+      });
   }, []);
 
   if (loading) {
@@ -53,7 +33,8 @@ function ProtectedRoute({ children }) {
     );
   }
 
-  if (!user) {
+  // 🔥 ONLY redirect if user is EXPLICITLY null
+  if (user === null) {
     return <Navigate to="/login" replace />;
   }
 
