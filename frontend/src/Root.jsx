@@ -8,21 +8,34 @@ import App from "./App";
 /* ================= PROTECTED ROUTE ================= */
 function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(undefined); // 👈 undefined, not null
+  const [user, setUser] = useState(undefined);
 
   useEffect(() => {
+    let cancelled = false;
+
     fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
       credentials: "include",
     })
-      .then((res) => (res.ok ? res.json() : null))
+      .then(async (res) => {
+        if (!res.ok) throw new Error("unauthorized");
+        return res.json();
+      })
       .then((data) => {
-        setUser(data);
-        setLoading(false);
+        if (!cancelled) {
+          setUser(data);
+          setLoading(false);
+        }
       })
       .catch(() => {
-        setUser(null);
-        setLoading(false);
+        if (!cancelled) {
+          setUser(null);
+          setLoading(false);
+        }
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading) {
@@ -33,7 +46,6 @@ function ProtectedRoute({ children }) {
     );
   }
 
-  // 🔥 ONLY redirect if user is EXPLICITLY null
   if (user === null) {
     return <Navigate to="/login" replace />;
   }
