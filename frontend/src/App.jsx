@@ -42,7 +42,16 @@ function App() {
           : socket.emit("create_room", { candidateId });
       }
     });
-
+    socket.on("room_created", ({ roomId }) => {
+      console.log("ROOM CREATED:", roomId);
+      setRoomId(roomId);
+    });
+    socket.on("joined_room", ({ roomId, role }) => {
+      console.log("JOINED ROOM:", roomId, role);
+      setRoomId(roomId);
+      setRole(role);
+    });
+        
     socket.on("joined_room", ({ roomId, role }) => {
       setRoomId(roomId);
       setRole(role);
