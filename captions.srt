@@ -1,0 +1,27 @@
+1
+00:00:00,000 --> 00:00:04,000
+Real-time Background Verification System
+
+2
+00:00:04,000 --> 00:00:08,000
+HR login using secure Google OAuth
+
+3
+00:00:08,000 --> 00:00:14,000
+HR initiates background verification process
+
+4
+00:00:14,000 --> 00:00:22,000
+Live chat between HR and referee
+
+5
+00:00:22,000 --> 00:00:30,000
+Referee answers verification questions in real time
+
+6
+00:00:30,000 --> 00:00:38,000
+Progress tracked automatically
+
+7
+00:00:38,000 --> 00:00:45,000
+Verification completed successfully
