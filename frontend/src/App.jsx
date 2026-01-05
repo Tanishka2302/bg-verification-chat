@@ -2,12 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { motion } from "framer-motion";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-
-const socket = io(BACKEND_URL, {
-  withCredentials: true,
-});
-
 function App() {
   const socketRef = useRef(null);
 
@@ -20,21 +14,24 @@ function App() {
     answered: 0,
     status: "pending",
   });
-  const [inviteLink, setInviteLink] = useState("");
 
   const params = new URLSearchParams(window.location.search);
   const inviteToken = params.get("token");
   const candidateId = "c819ebdf-9f1e-4229-bd47-481015e361e8";
 
-  /* ================= SOCKET SETUP ================= */
   useEffect(() => {
-    if (socketRef.current) return; // prevent duplicate socket
+    if (socketRef.current) return;
+
+    const socket = io(import.meta.env.VITE_BACKEND_URL, {
+      withCredentials: true,
+    });
+
     socketRef.current = socket;
-  
+
     socket.on("connect", () => {
       console.log("🟢 Connected", socket.id);
       setConnected(true);
-  
+
       if (inviteToken) {
         socket.emit("join_with_token", inviteToken);
       } else {
@@ -46,19 +43,19 @@ function App() {
         }
       }
     });
-  
+
     socket.on("joined_room", ({ roomId, role }) => {
       setRoomId(roomId);
       setRole(role);
       if (role === "HR") localStorage.setItem("roomId", roomId);
     });
-  
+
     socket.on("room_created", ({ roomId }) => {
       setRoomId(roomId);
       setRole("HR");
       localStorage.setItem("roomId", roomId);
     });
-  
+
     socket.on("receive_message", (msg) => {
       setChat((prev) => [
         ...prev,
@@ -68,24 +65,23 @@ function App() {
         },
       ]);
     });
-  
+
     socket.on("verification_progress", (data) => {
       setProgress(data);
     });
-  
+
     socket.on("disconnect", () => {
       console.log("🔴 Disconnected");
       setConnected(false);
     });
-  
-    // ✅ CLEANUP
+
     return () => {
       socket.off();
       socket.disconnect();
       socketRef.current = null;
     };
   }, [inviteToken]);
-  
+
 
   /* ================= LOAD HISTORY ================= */
   useEffect(() => {
