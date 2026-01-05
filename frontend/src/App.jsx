@@ -27,9 +27,17 @@ function App() {
   useEffect(() => {
     if (socketRef.current) return; // 🔒 prevent double socket
 
-    const socket = io("http://localhost:5000", {
+   /* const socket = io("http://localhost:5000", {
       transports: ["websocket"],
+    });*/
+    const socket = io(import.meta.env.VITE_BACKEND_URL, {
+      withCredentials: true,
     });
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const socket = io(BACKEND_URL, {
+  withCredentials: true,
+});
+
 
     socketRef.current = socket;
     
