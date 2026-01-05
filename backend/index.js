@@ -34,30 +34,42 @@ app.use(
     })
   );
   
-
-app.use(express.json());
-app.set("trust proxy", true);
-// Session (required for Passport)
-app.use(
-  session({
-    store: new PgSession({
-      pool,                 // your existing pg pool
-      tableName: "session", // auto-created
-    }),
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: true,         // Render = HTTPS
-      sameSite: "none",     // cross-site cookies
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-    },
-  })
-);
-
-
-app.use(passport.initialize());
-app.use(passport.session());
+  app.use(
+    cors({
+      origin: [
+        "http://localhost:5173",
+        "https://bg-verification-chat.vercel.app",
+      ],
+      credentials: true,
+    })
+  );
+  
+  app.use(express.json());
+  
+  // 🔥 THIS LINE MUST BE EXACT
+  app.set("trust proxy", 1);
+  
+  // Session (required for Passport)
+  app.use(
+    session({
+      store: new PgSession({
+        pool,
+        tableName: "session",
+      }),
+      secret: process.env.SESSION_SECRET,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: true,
+        sameSite: "none",
+        maxAge: 24 * 60 * 60 * 1000,
+      },
+    })
+  );
+  
+  app.use(passport.initialize());
+  app.use(passport.session());
+  
 
 /* ===============================
    ROUTES
