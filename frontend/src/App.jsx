@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { motion } from "framer-motion";
-import { io } from "socket.io-client";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -9,12 +8,9 @@ const socket = io(BACKEND_URL, {
   withCredentials: true,
 });
 
-const params = new URLSearchParams(window.location.search);
-const inviteToken = params.get("token");
-
 function App() {
   const socketRef = useRef(null);
-  
+
   const [roomId, setRoomId] = useState(null);
   const [chat, setChat] = useState([]);
   const [message, setMessage] = useState("");
@@ -30,27 +26,15 @@ function App() {
   const inviteToken = params.get("token");
   const candidateId = "c819ebdf-9f1e-4229-bd47-481015e361e8";
 
-  /* ================= SOCKET SETUP (FIXED) ================= */
+  /* ================= SOCKET SETUP ================= */
   useEffect(() => {
-    if (socketRef.current) return; // 🔒 prevent double socket
-
-   /* const socket = io("http://localhost:5000", {
-      transports: ["websocket"],
-    });*/
- 
-
-
+    if (socketRef.current) return; // prevent duplicate socket
     socketRef.current = socket;
-    
-    socketRef.current.on("force_create_room", () => {
-      localStorage.removeItem("roomId");
-      socketRef.current.emit("create_room", { candidateId });
-    });
-    
+  
     socket.on("connect", () => {
       console.log("🟢 Connected", socket.id);
       setConnected(true);
-
+  
       if (inviteToken) {
         socket.emit("join_with_token", inviteToken);
       } else {
@@ -62,45 +46,46 @@ function App() {
         }
       }
     });
-
+  
     socket.on("joined_room", ({ roomId, role }) => {
       setRoomId(roomId);
       setRole(role);
       if (role === "HR") localStorage.setItem("roomId", roomId);
     });
-
+  
     socket.on("room_created", ({ roomId }) => {
       setRoomId(roomId);
       setRole("HR");
       localStorage.setItem("roomId", roomId);
     });
-
+  
     socket.on("receive_message", (msg) => {
-      setChat((prev) => [...prev, msg]);
-      then((data) =>
-        setChat(
-          data.map((m) => ({
-            ...m,
-            sender: m.sender || m.sender_role, // 🔥 normalize
-          }))
-        )
-      );
+      setChat((prev) => [
+        ...prev,
+        {
+          ...msg,
+          sender: msg.sender || msg.sender_role,
+        },
+      ]);
     });
-
+  
     socket.on("verification_progress", (data) => {
       setProgress(data);
     });
-
+  
     socket.on("disconnect", () => {
       console.log("🔴 Disconnected");
       setConnected(false);
     });
-
+  
+    // ✅ CLEANUP
     return () => {
+      socket.off();
       socket.disconnect();
       socketRef.current = null;
     };
-  }, []);
+  }, [inviteToken]);
+  
 
   /* ================= LOAD HISTORY ================= */
   useEffect(() => {
