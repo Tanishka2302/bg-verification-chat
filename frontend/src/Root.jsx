@@ -11,21 +11,38 @@ function ProtectedRoute({ children }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
-      credentials: "include",
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Not authenticated");
-        return res.json();
-      })
-      .then((data) => {
-        setUser(data);       // ✅ user exists
+    const checkAuth = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/auth/me`,
+          { credentials: "include" }
+        );
+
+        if (!res.ok) throw new Error("unauthorized");
+
+        const data = await res.json();
+        setUser(data);
+      } catch {
+        // ⏳ allow hydration delay
+        setTimeout(async () => {
+          try {
+            const res = await fetch(
+              `${import.meta.env.VITE_BACKEND_URL}/auth/me`,
+              { credentials: "include" }
+            );
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            setUser(data);
+          } catch {
+            setUser(null);
+          }
+        }, 300);
+      } finally {
         setLoading(false);
-      })
-      .catch(() => {
-        setUser(null);       // ❌ not logged in
-        setLoading(false);
-      });
+      }
+    };
+
+    checkAuth();
   }, []);
 
   if (loading) {
