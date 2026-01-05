@@ -6,17 +6,20 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-     // callbackURL: "/auth/google/callback",
-     callbackURL: "https://bg-verification-chat.onrender.com/auth/google/callback",
-
+      callbackURL:
+        "https://bg-verification-chat.onrender.com/auth/google/callback",
     },
-    (accessToken, refreshToken, profile, done) => {
-      return done(null, {
-        googleId: profile.id,
-        email: profile.emails[0].value,
-        name: profile.displayName,
-        role: "HR",
-      });
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        return done(null, {
+          googleId: profile.id,
+          email: profile.emails[0].value,
+          name: profile.displayName,
+          role: "HR",
+        });
+      } catch (err) {
+        return done(err, null);
+      }
     }
   )
 );
@@ -25,6 +28,6 @@ passport.serializeUser((user, done) => {
   done(null, user);
 });
 
-passport.deserializeUser((obj, done) => {
-  done(null, obj);
+passport.deserializeUser((user, done) => {
+  done(null, user);
 });
