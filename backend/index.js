@@ -36,7 +36,7 @@ app.use(
   
 
 app.use(express.json());
-app.set("trust proxy", 1);
+app.set("trust proxy", true);
 // Session (required for Passport)
 app.use(
   session({
