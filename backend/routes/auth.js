@@ -14,8 +14,16 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/" }),
   (req, res) => {
-    // ✅ redirect to frontend dynamically
-    res.redirect(`${process.env.FRONTEND_URL}/verify`);
+    // 🔥 FORCE session save
+    req.login(req.user, (err) => {
+      if (err) {
+        console.error("Login error:", err);
+        return res.redirect(`${process.env.FRONTEND_URL}/login`);
+      }
+
+      console.log("✅ User logged in & session stored:", req.user);
+      res.redirect(`${process.env.FRONTEND_URL}/verify`);
+    });
   }
 );
 
@@ -28,12 +36,8 @@ router.get("/me", (req, res) => {
 // logout
 router.get("/logout", (req, res) => {
   req.logout(() => {
-    // ✅ redirect to frontend root dynamically
     res.redirect(process.env.FRONTEND_URL);
   });
 });
-
-
-console.log("OAuth redirecting to:", process.env.FRONTEND_URL);
 
 export default router;
