@@ -9,6 +9,9 @@ import passport from "passport";
 import session from "express-session";
 import authRoutes from "./routes/auth.js";
 import "./passport.js";
+import pgSession from "connect-pg-simple";
+
+const PgSession = pgSession(session);
 
 dotenv.config();
 
@@ -37,11 +40,21 @@ app.use(express.json());
 // Session (required for Passport)
 app.use(
   session({
+    store: new PgSession({
+      pool,                 // your existing pg pool
+      tableName: "session", // auto-created
+    }),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    cookie: {
+      secure: true,         // Render = HTTPS
+      sameSite: "none",     // cross-site cookies
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    },
   })
 );
+
 
 app.use(passport.initialize());
 app.use(passport.session());
