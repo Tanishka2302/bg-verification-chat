@@ -55,9 +55,9 @@ app.use(
     proxy: true, 
     cookie: {
       secure: true, 
-      sameSite: "none", // Required for cross-subdomain
+      sameSite: "none", // REQUIRED for cross-subdomain
       httpOnly: true,
-      partitioned: true, // Still keep this for Chrome safety
+      partitioned: true, // REQUIRED for modern Chrome
       maxAge: 24 * 60 * 60 * 1000,
     },
   })
@@ -70,7 +70,7 @@ app.use(passport.session());
 ================================ */
 
 app.use("/auth", authRoutes);
-app.use((req, res) => res.status(404).send("Not Found"));
+
 /* ===============================
     SOCKET.IO SETUP
 ================================ */
@@ -264,5 +264,7 @@ io.on("connection", (socket) => {
     SERVER START
 ================================ */
 app.use(express.static("dist"));
+ 
+app.use((req, res) => res.status(404).send("Not Found"));
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log("🚀 Server running on port", PORT));

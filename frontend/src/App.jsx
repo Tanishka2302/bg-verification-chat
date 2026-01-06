@@ -160,7 +160,8 @@ useEffect(() => {
   };
 
   /* ================= 5. FINAL PRODUCTION GUARDS ================= */
-
+  if (loading) return <div>Connecting...</div>; // Don't redirect while checking
+  if (!user && !inviteToken) return <Navigate to="/login" />;
   // Phase 1: Authentication in progress
   if (!authChecked) {
     return (
