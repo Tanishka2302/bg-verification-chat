@@ -17,14 +17,15 @@ router.get(
     failureRedirect: `${process.env.FRONTEND_URL}/login` 
   }),
   (req, res) => {
-    // ✅ Saves session to Neon DB BEFORE redirecting to prevent 401 on /me
+    // ✅ CRITICAL: Save the session to the Database (Neon) BEFORE redirecting.
+    // This prevents the frontend from hitting /me before the DB is fully updated.
     req.session.save((err) => {
       if (err) {
         console.error("❌ Session save error in callback:", err);
         return res.redirect(`${process.env.FRONTEND_URL}/login`);
       }
       
-      console.log("✅ Session successfully persisted. Redirecting to /verify.");
+      console.log("✅ Session successfully persisted to Neon. Redirecting to /verify.");
       res.redirect(`${process.env.FRONTEND_URL}/verify`);
     });
   }
@@ -36,13 +37,13 @@ router.get(
 
 // 3. Get logged-in user data
 router.get("/me", (req, res) => {
-  // Passport populates req.user upon successful deserialization
+  // Check if Passport has successfully deserialized the user
   if (req.isAuthenticated() && req.user) {
     return res.json(req.user);
   }
   
-  // Return 401 to trigger the frontend ProtectedRoute redirect
-  console.log("⚠️ /auth/me: User not authenticated");
+  // Return 401 to trigger the frontend ProtectedRoute guard
+  console.log("⚠️ /auth/me requested but user not authenticated");
   res.status(401).json(null);
 });
 
@@ -54,22 +55,21 @@ router.get("/logout", (req, res) => {
       return res.status(500).json({ message: "Logout failed" });
     }
     
-    // Destroy session in Postgres
+    // Destroy the session in the Postgres database
     req.session.destroy((destroyErr) => {
       if (destroyErr) {
         console.error("❌ Session destruction error:", destroyErr);
       }
       
-      // Clear cookie with exact production settings
-      const isProduction = process.env.NODE_ENV === "production";
+      // Clear the browser cookie using the exact production settings
       res.clearCookie("connect.sid", {
         path: "/",
         httpOnly: true,
-        secure: true, // Required for HTTPS on Render
+        secure: true,   // Required for HTTPS on Render
         sameSite: "none",
       });
       
-      console.log("👋 Session cleared. User logged out.");
+      console.log("👋 User logged out and session cleared.");
       res.status(200).json({ message: "Logged out" });
     });
   });
