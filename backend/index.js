@@ -19,58 +19,55 @@ const app = express();
 const server = http.createServer(app);
 
 /* ===============================
-   MIDDLEWARE
+    MIDDLEWARE
 ================================ */
 
-// CORS (frontend + dev)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://bg-verification-chat.vercel.app",
+];
 
 app.use(
-    cors({
-      origin: [
-        "http://localhost:5173",
-        "https://bg-verification-chat.vercel.app",
-      ],
-      credentials: true,
-    })
-  );
-  
-  app.use(
-    cors({
-      origin: [
-        "http://localhost:5173",
-        "https://bg-verification-chat.vercel.app",
-      ],
-      credentials: true,
-    })
-  );
-  
-  app.use(express.json());
-  
-  // 🔥 THIS LINE MUST BE EXACT
-  app.set("trust proxy", 1);
-  
-  // Session (required for Passport)
-  app.use(
-    session({
-      store: new PgSession({
-        pool,
-        tableName: "session",
-      }),
-      secret: process.env.SESSION_SECRET,
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: true,
-        sameSite: "none",
-        maxAge: 24 * 60 * 60 * 1000,
-      },
-    })
-  );
-  
-  app.use(passport.initialize());
-  app.use(passport.session());
-  
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        return callback(new Error("CORS policy violation"), false);
+      }
+      return callback(null, true);
+    },
+    credentials: true,
+  })
+);
 
+app.use(express.json());
+app.set("trust proxy", 1); // Keep this! Essential for Vercel.
+
+// 🔥 DYNAMIC COOKIE SETTINGS
+const isProduction = process.env.NODE_ENV === "production";
+
+app.use(
+  session({
+    store: new PgSession({
+      pool,
+      tableName: "session",
+    }),
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    proxy: true, // Required for secure cookies behind a proxy
+    cookie: {
+      secure: isProduction, // true in prod, false in dev
+      sameSite: isProduction ? "none" : "lax", // "none" for cross-site prod, "lax" for dev
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    },
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 /* ===============================
    ROUTES
 ================================ */
