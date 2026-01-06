@@ -8,8 +8,8 @@ const router = express.Router();
 ================================ */
 
 // 1. Start Google login
-// We pass the scope here explicitly to satisfy Google's requirements
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+
 // 2. Google callback
 router.get(
   "/google/callback",
@@ -17,15 +17,14 @@ router.get(
     failureRedirect: `${process.env.FRONTEND_URL}/login` 
   }),
   (req, res) => {
-    // 🔥 CRITICAL: Save the session to the Database (Neon) BEFORE redirecting.
-    // Without this, the frontend might hit /me before the DB is updated.
+    // ✅ Saves session to Neon DB BEFORE redirecting to prevent 401 on /me
     req.session.save((err) => {
       if (err) {
         console.error("❌ Session save error in callback:", err);
         return res.redirect(`${process.env.FRONTEND_URL}/login`);
       }
       
-      console.log("✅ Session successfully persisted to Neon. Redirecting to /verify.");
+      console.log("✅ Session successfully persisted. Redirecting to /verify.");
       res.redirect(`${process.env.FRONTEND_URL}/verify`);
     });
   }
@@ -37,13 +36,13 @@ router.get(
 
 // 3. Get logged-in user data
 router.get("/me", (req, res) => {
-  // Check if Passport has deserialized the user correctly
+  // Passport populates req.user upon successful deserialization
   if (req.isAuthenticated() && req.user) {
     return res.json(req.user);
   }
   
-  // If not authenticated, return 401 and null to trigger the frontend guard
-  console.log("⚠️ /auth/me requested but user not authenticated");
+  // Return 401 to trigger the frontend ProtectedRoute redirect
+  console.log("⚠️ /auth/me: User not authenticated");
   res.status(401).json(null);
 });
 
@@ -55,21 +54,22 @@ router.get("/logout", (req, res) => {
       return res.status(500).json({ message: "Logout failed" });
     }
     
-    // Destroy the session in the database
+    // Destroy session in Postgres
     req.session.destroy((destroyErr) => {
       if (destroyErr) {
         console.error("❌ Session destruction error:", destroyErr);
       }
       
-      // Clear the browser cookie
+      // Clear cookie with exact production settings
+      const isProduction = process.env.NODE_ENV === "production";
       res.clearCookie("connect.sid", {
         path: "/",
         httpOnly: true,
-        secure: true,
+        secure: true, // Required for HTTPS on Render
         sameSite: "none",
       });
       
-      console.log("👋 User logged out and session cleared.");
+      console.log("👋 Session cleared. User logged out.");
       res.status(200).json({ message: "Logged out" });
     });
   });

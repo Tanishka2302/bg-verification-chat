@@ -45,10 +45,15 @@ passport.serializeUser((user, done) => {
 // Use that ID to fetch the full user from DB on every request
 passport.deserializeUser(async (id, done) => {
   try {
-    // If 'id' is accidentally an object (from an old session), handle it
-    const actualId = (typeof id === 'object' && id !== null) ? id.id : id;
+    // Standardize the ID
+    const actualId = (id && typeof id === 'object') ? id.id : id;
 
     const res = await pool.query('SELECT * FROM "users" WHERE id = $1', [actualId]);
+    
+    if (res.rows.length === 0) {
+      return done(null, false); // No user found, session is invalid
+    }
+
     const user = res.rows[0];
     done(null, user);
   } catch (err) {

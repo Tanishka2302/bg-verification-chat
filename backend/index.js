@@ -120,7 +120,10 @@ async function updateVerificationStatus(roomId) {
 /* ===============================
     REST API
 ================================ */
-
+// Add this near your other routes
+app.get('/', (req, res) => {
+  res.send('Backend is running successfully!');
+});
 app.get("/rooms/:roomId/messages", async (req, res) => {
   try {
     const result = await pool.query(
