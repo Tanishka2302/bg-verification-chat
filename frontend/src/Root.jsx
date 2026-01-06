@@ -17,22 +17,20 @@ function ProtectedRoute({ children }) {
     let isMounted = true;
   
     fetch("https://bg-verification-chat.onrender.com/auth/me", {
-      credentials: "include", // Essential to send the connect.sid cookie
+      credentials: "include", //
     })
       .then((res) => {
-        // 401 just means "logged out"—it is not a crash
-        if (res.status === 401) return null;
-        if (!res.ok) throw new Error("Server Error");
-        return res.json(); // CRITICAL: You must convert to JSON
+        if (res.status === 401) return null; // Normal state: Not logged in
+        if (!res.ok) throw new Error("Server error");
+        return res.json(); //
       })
       .then((data) => {
         if (isMounted) {
-          setUser(data); // 'data' is the user object from your Neon DB
+          setUser(data);
           setLoading(false);
         }
       })
       .catch((err) => {
-        console.warn("Auth check failed:", err.message);
         if (isMounted) {
           setUser(null);
           setLoading(false);
@@ -43,7 +41,7 @@ function ProtectedRoute({ children }) {
   }, []);
 
   if (loading) {
-    return <div className="h-screen flex items-center justify-center font-bold">Checking session...</div>;
+    return <div className="h-screen flex items-center justify-center">Checking session...</div>;
   }
 
   // Allow entry if logged in OR if using a valid invite link
