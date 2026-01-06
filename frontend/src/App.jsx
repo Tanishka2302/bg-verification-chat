@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { motion } from "framer-motion";
-import { Navigate } from "react-router-dom";
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+// Helper to clean URL and prevent double slashes
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
 function App() {
   const socketRef = useRef(null);
@@ -14,11 +15,7 @@ function App() {
   const [role, setRole] = useState("HR");
   const [connected, setConnected] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
-
-  const [progress, setProgress] = useState({
-    answered: 0,
-    status: "pending",
-  });
+  const [progress, setProgress] = useState({ answered: 0, status: "pending" });
 
   // --- URL & Auth States ---
   const params = new URLSearchParams(window.location.search);
@@ -28,33 +25,37 @@ function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [user, setUser] = useState(null);
 
-  /* ================= 1. AUTH CHECK (First Priority) ================= */
- /* ================= 1. AUTH CHECK ================= */
-useEffect(() => {
-  console.log("Checking session at:", `${BACKEND_URL}/auth/me`); // Add this
-  fetch(`${BACKEND_URL}/auth/me`, {
-    credentials: "include", 
-  })
-  .then((res) => {
-    console.log("Auth Response Status:", res.status);
-    if (res.status === 401) return null; // Explicitly handle unauthorized
-    return res.ok ? res.json() : null;
-  })
-    .then((data) => {
-      console.log("User data received:", data); // Add this
-      setUser(data);
-      setAuthChecked(true);
-    })
-    .catch((err) => {
-      console.error("Auth fetch error:", err); // Add this
-      setUser(null);
-      setAuthChecked(true);
-    });
-}, []);
+  /* ================= 1. AUTH CHECK ================= */
+  useEffect(() => {
+    let isMounted = true;
+    
+    fetch(`${BACKEND_URL}/auth/me`, { credentials: "include" })
+      .then((res) => {
+        if (res.status === 401) return null; // Expected if not logged in
+        return res.ok ? res.json() : null;
+      })
+      .then((data) => {
+        if (isMounted) {
+          setUser(data);
+          setAuthChecked(true);
+        }
+      })
+      .catch((err) => {
+        console.error("Auth error:", err);
+        if (isMounted) {
+          setUser(null);
+          setAuthChecked(true);
+        }
+      });
+
+    return () => { isMounted = false; };
+  }, []);
+
   /* ================= 2. SOCKET SETUP ================= */
   useEffect(() => {
+    // Only connect if session check is DONE AND (User exists OR Invite Token exists)
     if (!authChecked) return;
-    if (!user && !inviteToken) return;
+    if (!user && !inviteToken) return; 
     if (socketRef.current) return;
 
     const socket = io(BACKEND_URL, { 
@@ -88,10 +89,7 @@ useEffect(() => {
     });
 
     socket.on("receive_message", (msg) => {
-      setChat((prev) => [
-        ...prev,
-        { ...msg, sender: msg.sender || msg.sender_role },
-      ]);
+      setChat((prev) => [...prev, { ...msg, sender: msg.sender || msg.sender_role }]);
     });
 
     socket.on("verification_progress", setProgress);
@@ -99,7 +97,6 @@ useEffect(() => {
 
     return () => {
       if (socketRef.current) {
-        socketRef.current.off();
         socketRef.current.disconnect();
         socketRef.current = null;
       }
@@ -110,9 +107,7 @@ useEffect(() => {
   useEffect(() => {
     if (!roomId) return;
 
-    fetch(`${BACKEND_URL}/rooms/${roomId}/messages`, {
-      credentials: "include",
-    })
+    fetch(`${BACKEND_URL}/rooms/${roomId}/messages`, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => setChat(Array.isArray(data) ? data : []))
       .catch(() => setChat([]));
@@ -121,18 +116,11 @@ useEffect(() => {
   /* ================= 4. CORE CHAT LOGIC ================= */
   const systemQuestions = chat.filter((m) => m.sender === "SYSTEM");
   const refereeAnswers = chat.filter((m) => m.sender === "REFEREE" && m.is_answer);
-
   const answeredCount = Math.min(refereeAnswers.length, systemQuestions.length);
   const currentQuestion = systemQuestions[answeredCount] || null;
 
-  const getRelatedQuestion = (msg) => {
-    const index = refereeAnswers.indexOf(msg);
-    return systemQuestions[index] || null;
-  };
-
   const sendMessage = (text) => {
     if (!text.trim() || !socketRef.current) return;
-
     socketRef.current.emit("send_message", {
       text,
       questionIndex: role === "REFEREE" ? answeredCount : null,
@@ -140,49 +128,28 @@ useEffect(() => {
     setMessage("");
   };
 
-  const createInvite = async () => {
-    if (!roomId) return;
-    try {
-      const res = await fetch(`${BACKEND_URL}/invite`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ roomId }),
-      });
-      const data = await res.json();
-      if (data.inviteLink) {
-        setInviteLink(data.inviteLink);
-        navigator.clipboard.writeText(data.inviteLink);
-        alert("Invite link copied!");
-      }
-    } catch (err) {
-      console.error("Invite failed", err);
-    }
-  };
-/* ================= 5. FINAL PRODUCTION GUARDS ================= */
+  /* ================= 5. PRODUCTION GUARDS ================= */
   
-  // 1. If we haven't finished checking the session yet, show the "Verifying" screen
+  // Phase 1: Wait for Auth
   if (!authChecked) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
+      <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-gray-600 font-medium">Verifying Session...</p>
       </div>
     );
   }
 
-  // 2. If session check is done, but NO user is found and NO invite token is present
+  // Phase 2: Redirect if unauthorized and no token
   if (!user && !inviteToken) {
-    window.location.href = "/login"; // Use window.location if Navigate isn't imported
+    window.location.href = "/login";
     return null;
   }
 
-  // 3. If we are authenticated but the WebSocket hasn't connected yet
+  // Phase 3: Wait for Socket
   if (!connected) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
-        <div className="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-gray-500 italic">Connecting to secure server...</p>
+      <div className="h-screen flex items-center justify-center bg-gray-50 text-gray-400">
+        Connecting to secure server...
       </div>
     );
   }

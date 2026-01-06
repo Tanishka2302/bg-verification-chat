@@ -37,6 +37,7 @@ function Login() {
           >
             <span className="text-xl">🔐</span>
             Sign in with Google
+            
           </a>
 
           <p className="mt-6 text-sm text-gray-400">
