@@ -168,7 +168,7 @@ function App() {
       </div>
     );
   }
-
+/*
   // Phase 2: Not Logged In & No Token -> Redirect
   if (!user && !inviteToken) {
     window.location.href = "/login";
@@ -183,7 +183,52 @@ function App() {
       </div>
     );
   }
+*/
+/* ================= 5. DEBUG GUARD (TEMPORARY) ================= */
 
+  // Phase 1: Checking Authentication
+  if (!authChecked) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-xl font-mono">STEP 1: Checking Session with Backend...</p>
+      </div>
+    );
+  }
+
+  // Phase 2: DEBUG SCREEN (Replacement for the redirect)
+  if (!user && !inviteToken) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-red-900 text-white p-10 text-center">
+        <h1 className="text-4xl font-bold mb-4">🛑 REDIRECT STOPPED (DEBUG MODE)</h1>
+        <div className="bg-black/30 p-6 rounded-lg font-mono text-left space-y-2 border border-red-400">
+          <p>📌 <span className="text-red-300">AuthChecked:</span> {String(authChecked)}</p>
+          <p>📌 <span className="text-red-300">User State:</span> {user === null ? "null (Unauthorized)" : "undefined"}</p>
+          <p>📌 <span className="text-red-300">Invite Token:</span> {inviteToken || "None"}</p>
+          <p>📌 <span className="text-red-300">Backend URL:</span> {BACKEND_URL}</p>
+        </div>
+        <p className="mt-6 text-lg italic text-red-200">
+          If you see this, the backend returned 401. Check your browser Network tab for the "/auth/me" request 
+          to see if the cookie "connect.sid" was sent.
+        </p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-8 px-6 py-2 bg-white text-red-900 font-bold rounded-full hover:bg-red-100"
+        >
+          Try Refreshing
+        </button>
+      </div>
+    );
+  }
+
+  // Phase 3: Waiting for Socket
+  if (!connected) {
+    return (
+      <div className="h-screen flex items-center justify-center text-blue-400 bg-gray-900 font-mono">
+        📡 STEP 3: Auth Passed! Connecting to Socket...
+      </div>
+    );
+  }
   /* ================= 6. MAIN UI ================= */
   return (
     <motion.div
