@@ -10,12 +10,48 @@ import session from "express-session";
 import authRoutes from "./routes/auth.js";
 import "./passport.js";
 import pgSession from "connect-pg-simple";
-
-const PgSession = pgSession(session);
-dotenv.config();
-
 const app = express();
-app.set("trust proxy", 1); //
+// MUST BE AT THE VERY TOP
+app.set("trust proxy", 1); 
+dotenv.config(); // Load this early
+const PgSession = pgSession(session);
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://bg-verification-chat.vercel.app",
+  "https://bg-verification-chat-frontend.onrender.com",
+  "https://bg-verification-chat.onrender.com" // Add backend URL too
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS policy violation"));
+    }
+  },
+  credentials: true, // MUST be true
+}));
+
+app.use(session({
+  store: new PgSession({ pool, tableName: "session" }),
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  proxy: true, 
+  cookie: {
+    secure: true,      // REQUIRED for Render
+    sameSite: "none",  // REQUIRED for cross-site
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+    // REMOVED 'partitioned: true' to avoid proxy conflicts
+  },
+}));
+
+
+
+
 const server = http.createServer(app);
 
 /* ===============================
@@ -25,44 +61,6 @@ const server = http.createServer(app);
 // Trusting the proxy is mandatory for Render/Vercel to handle HTTPS cookies
 
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://bg-verification-chat.vercel.app",
-  "https://bg-verification-chat-frontend.onrender.com",
-];
-
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS policy violation"));
-      }
-    },
-    credentials: true, // Required to allow cookies to be sent
-  })
-);
-
-app.use(express.json());
-
-const isProduction = process.env.NODE_ENV === "production";
-app.use(
-  session({
-    store: new PgSession({ pool, tableName: "session" }),
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    proxy: true, 
-    cookie: {
-      secure: true, 
-      sameSite: "none", // REQUIRED for cross-subdomain
-      httpOnly: true,
-      partitioned: true, // REQUIRED for modern Chrome
-      maxAge: 24 * 60 * 60 * 1000,
-    },
-  })
-);
 app.use(passport.initialize());
 app.use(passport.session());
 
