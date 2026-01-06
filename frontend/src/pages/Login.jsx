@@ -1,7 +1,13 @@
 function Login() {
   // Fallback to localhost if the env var isn't set yet
   const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-
+// Add this helper inside your Login function
+const cleanBackendUrl = backendUrl.replace(/\/$/, ""); // Removes trailing slash if it exists
+const loginUrl = `${cleanBackendUrl}/auth/google`;
+useEffect(() => {
+  console.log("Current Backend URL:", backendUrl);
+  console.log("Full Login Link:", `${backendUrl}/auth/google`);
+}, [backendUrl]);
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700" />

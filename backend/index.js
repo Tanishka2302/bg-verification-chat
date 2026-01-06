@@ -64,13 +64,13 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
-
+app.use(express.static("dist"));
 /* ===============================
     ROUTES
 ================================ */
 
 app.use("/auth", authRoutes);
-
+app.use((req, res) => res.status(404).send("Not Found"));
 /* ===============================
     SOCKET.IO SETUP
 ================================ */
