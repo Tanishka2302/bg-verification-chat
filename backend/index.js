@@ -27,6 +27,7 @@ app.set("trust proxy", 1);
 const allowedOrigins = [
   "http://localhost:5173",
   "https://bg-verification-chat.vercel.app",
+  "https://your-frontend-name.onrender.com",
 ];
 
 app.use(
@@ -47,19 +48,16 @@ app.use(express.json());
 const isProduction = process.env.NODE_ENV === "production";
 app.use(
   session({
-    store: new PgSession({
-      pool,
-      tableName: "session",
-    }),
+    store: new PgSession({ pool, tableName: "session" }),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     proxy: true, 
     cookie: {
-      secure: true,      // MANDATORY for cross-site cookies
-      sameSite: "none",  // MANDATORY for different domains
+      secure: true, 
+      sameSite: "none", // Required for cross-subdomain
       httpOnly: true,
-      partitioned: true, // <--- ADD THIS to bypass the Chrome block
+      partitioned: true, // Still keep this for Chrome safety
       maxAge: 24 * 60 * 60 * 1000,
     },
   })
