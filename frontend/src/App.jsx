@@ -158,11 +158,9 @@ useEffect(() => {
       console.error("Invite failed", err);
     }
   };
-
-  /* ================= 5. FINAL PRODUCTION GUARDS ================= */
-  if (!authChecked) return <div>Connecting...</div>; // ✅ Uses your existing state // Don't redirect while checking
-  if (!user && !inviteToken) return <Navigate to="/login" />;
-  // Phase 1: Authentication in progress
+/* ================= 5. FINAL PRODUCTION GUARDS ================= */
+  
+  // 1. If we haven't finished checking the session yet, show the "Verifying" screen
   if (!authChecked) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
@@ -172,13 +170,13 @@ useEffect(() => {
     );
   }
 
-  // Phase 2: Not Logged In & No Token -> Proceed to Login
+  // 2. If session check is done, but NO user is found and NO invite token is present
   if (!user && !inviteToken) {
-    window.location.href = "/login";
+    window.location.href = "/login"; // Use window.location if Navigate isn't imported
     return null;
   }
 
-  // Phase 3: Waiting for WebSocket Connection
+  // 3. If we are authenticated but the WebSocket hasn't connected yet
   if (!connected) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
@@ -187,6 +185,7 @@ useEffect(() => {
       </div>
     );
   }
+  
   /* ================= 6. MAIN UI ================= */
   return (
     <motion.div
