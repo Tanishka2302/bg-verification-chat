@@ -17,12 +17,12 @@ function ProtectedRoute({ children }) {
     let isMounted = true;
   
     fetch("https://bg-verification-chat.onrender.com/auth/me", {
-      credentials: "include", //
+      credentials: "include", // Essential to send the connect.sid cookie
     })
       .then((res) => {
-        if (res.status === 401) return null; // Normal state: Not logged in
+        if (res.status === 401) return null; // 401 is normal if logged out
         if (!res.ok) throw new Error("Server error");
-        return res.json(); //
+        return res.json(); // CRITICAL: Convert response to JSON
       })
       .then((data) => {
         if (isMounted) {
@@ -41,10 +41,10 @@ function ProtectedRoute({ children }) {
   }, []);
 
   if (loading) {
-    return <div className="h-screen flex items-center justify-center">Checking session...</div>;
+    return <div className="h-screen flex items-center justify-center font-bold text-blue-600">Verifying Session...</div>;
   }
 
-  // Allow entry if logged in OR if using a valid invite link
+  // Bypass if invite token is present or user is logged in
   if (user || inviteToken) {
     return children;
   }
