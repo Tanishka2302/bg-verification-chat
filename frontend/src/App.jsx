@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { motion } from "framer-motion";
-
+import { Navigate } from "react-router-dom";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 function App() {
@@ -35,10 +35,11 @@ useEffect(() => {
   fetch(`${BACKEND_URL}/auth/me`, {
     credentials: "include", 
   })
-    .then((res) => {
-      console.log("Auth Response Status:", res.status); // Add this
-      return res.ok ? res.json() : null;
-    })
+  .then((res) => {
+    console.log("Auth Response Status:", res.status);
+    if (res.status === 401) return null; // Explicitly handle unauthorized
+    return res.ok ? res.json() : null;
+  })
     .then((data) => {
       console.log("User data received:", data); // Add this
       setUser(data);

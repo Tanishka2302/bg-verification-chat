@@ -7,6 +7,13 @@ import App from "./App";
 
 /* ================= PROTECTED ROUTE ================= */
 function ProtectedRoute({ children }) {
+  const params = new URLSearchParams(window.location.search);
+const inviteToken = params.get("token");
+
+// Allow access if user exists OR if there is an invite token
+if (user === null && !inviteToken) {
+  return <Navigate to="/login" replace />;
+}
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(undefined);
 
@@ -58,13 +65,19 @@ function Root() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
+        {/* Public Routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
 
-        {/* Protected */}
-        <Route path="/verify" element={<App />} />
-
+        {/* Protected Routes */}
+        <Route 
+          path="/verify" 
+          element={
+            <ProtectedRoute>
+              <App />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </BrowserRouter>
   );
