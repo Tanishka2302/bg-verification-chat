@@ -6,7 +6,6 @@ import Login from "./pages/Login";
 import App from "./App";
 
 /* ================= PROTECTED ROUTE ================= */
-
 function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
@@ -18,17 +17,17 @@ function ProtectedRoute({ children }) {
     let isMounted = true;
   
     fetch("https://bg-verification-chat.onrender.com/auth/me", {
-      credentials: "include", // Required to send that connect.sid cookie
+      credentials: "include", // Essential to send the connect.sid cookie
     })
       .then((res) => {
-        // 401 is NOT an error here; it just means no one is logged in
+        // 401 just means "logged out"—it is not a crash
         if (res.status === 401) return null;
         if (!res.ok) throw new Error("Server Error");
-        return res.json(); // CRITICAL: You must convert response to JSON
+        return res.json(); // CRITICAL: You must convert to JSON
       })
       .then((data) => {
         if (isMounted) {
-          setUser(data); // 'data' is now the actual user object or null
+          setUser(data); // 'data' is the user object from your Neon DB
           setLoading(false);
         }
       })
@@ -44,10 +43,10 @@ function ProtectedRoute({ children }) {
   }, []);
 
   if (loading) {
-    return <div className="h-screen flex items-center justify-center font-medium">Verifying Session...</div>;
+    return <div className="h-screen flex items-center justify-center font-bold">Checking session...</div>;
   }
 
-  // Allow entry if user is logged in OR if there's a valid invite token
+  // Allow entry if logged in OR if using a valid invite link
   if (user || inviteToken) {
     return children;
   }
