@@ -48,4 +48,18 @@ passport.deserializeUser(async (id, done) => {
   } catch (err) {
     done(err, null);
   }
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: "https://bg-verification-chat.onrender.com/auth/google/callback",
+        // 🔥 ADD THIS LINE BELOW
+        scope: ["profile", "email"], 
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        // ... your existing async logic is correct
+      }
+    )
+  );
 });
