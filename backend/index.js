@@ -64,7 +64,7 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(express.static("dist"));
+
 /* ===============================
     ROUTES
 ================================ */
@@ -263,6 +263,6 @@ io.on("connection", (socket) => {
 /* ===============================
     SERVER START
 ================================ */
-
+app.use(express.static("dist"));
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log("🚀 Server running on port", PORT));
