@@ -21,31 +21,29 @@ const server = http.createServer(app);
     MIDDLEWARE & SECURITY
 ================================ */
 
+// Trusting the proxy is mandatory for Render/Vercel to handle HTTPS cookies
+app.set("trust proxy", 1); 
+
 const allowedOrigins = [
   "http://localhost:5173",
   "https://bg-verification-chat.vercel.app",
 ];
 
-// 1. Optimized CORS for both Express and Browser
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        return callback(new Error("CORS policy violation"), false);
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS policy violation"));
       }
-      return callback(null, true);
     },
-    credentials: true,
+    credentials: true, // Required to allow cookies to be sent
   })
 );
 
 app.use(express.json());
 
-// 2. Trust Proxy is CRITICAL for Vercel/Render HTTPS
-app.set("trust proxy", 1); 
-
-// 3. Dynamic Session Configuration
 const isProduction = process.env.NODE_ENV === "production";
 
 app.use(
@@ -53,13 +51,16 @@ app.use(
     store: new PgSession({
       pool,
       tableName: "session",
+      createTableIfMissing: true // Ensures the session table exists in your DB
     }),
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || "fallback_secret",
     resave: false,
     saveUninitialized: false,
     proxy: true, 
     cookie: {
+      // Must be true for Cross-Site cookies to work
       secure: isProduction, 
+      // 'none' is required because Vercel and Render are different domains
       sameSite: isProduction ? "none" : "lax", 
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
@@ -92,7 +93,6 @@ const io = new Server(server, {
 ================================ */
 
 const TOTAL_QUESTIONS = 5;
-
 const VERIFICATION_QUESTIONS = [
   "Can you confirm the candidate’s job title?",
   "What was the employment duration (from – to)?",
@@ -178,9 +178,6 @@ app.post("/invite", async (req, res) => {
 
 io.on("connection", (socket) => {
   console.log("🟢 Socket connected:", socket.id);
-
-  socket.role = "HR";
-  socket.roomId = null;
 
   socket.on("join_with_token", async (token) => {
     try {
