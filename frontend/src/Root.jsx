@@ -6,9 +6,7 @@ import Login from "./pages/Login";
 import App from "./App";
 
 /* ================= PROTECTED ROUTE ================= */
-/* ================= PROTECTED ROUTE ================= */
-/* ================= PROTECTED ROUTE ================= */
-/* ================= PROTECTED ROUTE ================= */
+
 function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
@@ -20,16 +18,17 @@ function ProtectedRoute({ children }) {
     let isMounted = true;
   
     fetch("https://bg-verification-chat.onrender.com/auth/me", {
-      credentials: "include", // Essential for cookies
+      credentials: "include", // Required to send that connect.sid cookie
     })
       .then((res) => {
-        if (res.status === 401) return null; // Expected if not logged in
+        // 401 is NOT an error here; it just means no one is logged in
+        if (res.status === 401) return null;
         if (!res.ok) throw new Error("Server Error");
-        return res.json(); // YOU MUST CALL .json() HERE
+        return res.json(); // CRITICAL: You must convert response to JSON
       })
       .then((data) => {
         if (isMounted) {
-          setUser(data);
+          setUser(data); // 'data' is now the actual user object or null
           setLoading(false);
         }
       })
@@ -45,10 +44,10 @@ function ProtectedRoute({ children }) {
   }, []);
 
   if (loading) {
-    return <div className="h-screen flex items-center justify-center">Checking session...</div>;
+    return <div className="h-screen flex items-center justify-center font-medium">Verifying Session...</div>;
   }
 
-  // If we have a user OR a token, let them in
+  // Allow entry if user is logged in OR if there's a valid invite token
   if (user || inviteToken) {
     return children;
   }
