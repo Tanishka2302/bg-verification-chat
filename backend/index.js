@@ -56,10 +56,10 @@ app.use(
     saveUninitialized: false,
     proxy: true, 
     cookie: {
-      secure: true,      // Must be true for Render/HTTPS
-      sameSite: "none",  // Required for Vercel -> Render
+      secure: true,      // MANDATORY for cross-site cookies
+      sameSite: "none",  // MANDATORY for different domains
       httpOnly: true,
-      partitioned: true, // <--- ADD THIS to bypass Chrome's new block
+      partitioned: true, // <--- ADD THIS to bypass the Chrome block
       maxAge: 24 * 60 * 60 * 1000,
     },
   })
