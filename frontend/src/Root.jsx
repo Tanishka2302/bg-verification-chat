@@ -1,25 +1,70 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+
 import Landing from "./Landing";
 import Login from "./pages/Login";
 import App from "./App";
+
+/* ================= PROTECTED ROUTE ================= */
+function ProtectedRoute({ children }) {
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
+      credentials: "include",
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("unauthorized");
+        return res.json();
+      })
+      .then((data) => {
+        if (!cancelled) {
+          setUser(data);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setUser(null);
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center text-gray-500">
+        Checking session…
+      </div>
+    );
+  }
+
+  if (user === null) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
 
 /* ================= ROOT ================= */
 function Root() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Landing & Login */}
+        {/* Public */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
 
-        {/* The /verify route renders App.jsx. 
-          App.jsx now handles its own internal loading states and 
-          redirects, which is more stable for OAuth flows.
-        */}
+        {/* Protected */}
         <Route path="/verify" element={<App />} />
 
-        {/* Optional: Catch-all redirect to Landing */}
-        <Route path="*" element={<Landing />} />
       </Routes>
     </BrowserRouter>
   );
