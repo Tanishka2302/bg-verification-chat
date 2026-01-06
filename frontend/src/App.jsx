@@ -31,7 +31,7 @@ function App() {
   /* ================= 1. AUTH CHECK (First Priority) ================= */
   useEffect(() => {
     fetch(`${BACKEND_URL}/auth/me`, {
-      credentials: "include", // Essential for cookies
+      credentials: "include", 
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -46,14 +46,13 @@ function App() {
 
   /* ================= 2. SOCKET SETUP ================= */
   useEffect(() => {
-    // Only connect if we've checked auth AND (user exists OR it's a referee with a token)
     if (!authChecked) return;
     if (!user && !inviteToken) return;
     if (socketRef.current) return;
 
     const socket = io(BACKEND_URL, { 
       withCredentials: true,
-      transports: ['websocket', 'polling'] // Improved compatibility
+      transports: ['websocket', 'polling']
     });
     socketRef.current = socket;
 
@@ -89,7 +88,6 @@ function App() {
     });
 
     socket.on("verification_progress", setProgress);
-
     socket.on("disconnect", () => setConnected(false));
 
     return () => {
@@ -113,7 +111,7 @@ function App() {
       .catch(() => setChat([]));
   }, [roomId]);
 
-  /* ================= 4. CORE CHAT LOGIC (Your Logic) ================= */
+  /* ================= 4. CORE CHAT LOGIC ================= */
   const systemQuestions = chat.filter((m) => m.sender === "SYSTEM");
   const refereeAnswers = chat.filter((m) => m.sender === "REFEREE" && m.is_answer);
 
@@ -155,77 +153,30 @@ function App() {
     }
   };
 
-  /* ================= 5. GUARD RENDERING ================= */
+  /* ================= 5. FINAL PRODUCTION GUARDS ================= */
 
-  // Phase 1: Checking Authentication
+  // Phase 1: Authentication in progress
   if (!authChecked) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50 text-gray-500 font-medium">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          Verifying Session...
-        </div>
+      <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-gray-600 font-medium">Verifying Session...</p>
       </div>
     );
   }
-/*
-  // Phase 2: Not Logged In & No Token -> Redirect
+
+  // Phase 2: Not Logged In & No Token -> Proceed to Login
   if (!user && !inviteToken) {
     window.location.href = "/login";
     return null;
   }
 
-  // Phase 3: Waiting for Socket
+  // Phase 3: Waiting for WebSocket Connection
   if (!connected) {
     return (
-      <div className="h-screen flex items-center justify-center text-gray-500 bg-gray-50">
-        Establishing Secure Connection...
-      </div>
-    );
-  }
-*/
-/* ================= 5. DEBUG GUARD (TEMPORARY) ================= */
-
-  // Phase 1: Checking Authentication
-  if (!authChecked) {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center bg-gray-900 text-white">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-xl font-mono">STEP 1: Checking Session with Backend...</p>
-      </div>
-    );
-  }
-
-  // Phase 2: DEBUG SCREEN (Replacement for the redirect)
-  if (!user && !inviteToken) {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center bg-red-900 text-white p-10 text-center">
-        <h1 className="text-4xl font-bold mb-4">🛑 REDIRECT STOPPED (DEBUG MODE)</h1>
-        <div className="bg-black/30 p-6 rounded-lg font-mono text-left space-y-2 border border-red-400">
-          <p>📌 <span className="text-red-300">AuthChecked:</span> {String(authChecked)}</p>
-          <p>📌 <span className="text-red-300">User State:</span> {user === null ? "null (Unauthorized)" : "undefined"}</p>
-          <p>📌 <span className="text-red-300">Invite Token:</span> {inviteToken || "None"}</p>
-          <p>📌 <span className="text-red-300">Backend URL:</span> {BACKEND_URL}</p>
-        </div>
-        <p className="mt-6 text-lg italic text-red-200">
-          If you see this, the backend returned 401. Check your browser Network tab for the "/auth/me" request 
-          to see if the cookie "connect.sid" was sent.
-        </p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-8 px-6 py-2 bg-white text-red-900 font-bold rounded-full hover:bg-red-100"
-        >
-          Try Refreshing
-        </button>
-      </div>
-    );
-  }
-
-  // Phase 3: Waiting for Socket
-  if (!connected) {
-    return (
-      <div className="h-screen flex items-center justify-center text-blue-400 bg-gray-900 font-mono">
-        📡 STEP 3: Auth Passed! Connecting to Socket...
+      <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
+        <div className="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-gray-500 italic">Connecting to secure server...</p>
       </div>
     );
   }
