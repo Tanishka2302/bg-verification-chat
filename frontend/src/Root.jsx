@@ -15,26 +15,34 @@ function ProtectedRoute({ children }) {
   // 2. Get the token
   const params = new URLSearchParams(window.location.search);
   const inviteToken = params.get("token");
-
   useEffect(() => {
-    let cancelled = false;
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : null))
+    let isMounted = true;
+  
+    fetch("https://bg-verification-chat.onrender.com/auth/me", {
+      credentials: "include", // Required to send the session cookie
+    })
+      .then((res) => {
+        // If 401, just return null (not an app crash, just not logged in)
+        if (res.status === 401) return null;
+        if (!res.ok) throw new Error("Server Error");
+        return res.json();
+      })
       .then((data) => {
-        if (!cancelled) {
+        if (isMounted) {
           setUser(data);
           setLoading(false);
         }
       })
-      .catch(() => {
-        if (!cancelled) {
+      .catch((err) => {
+        console.warn("User not authenticated:", err.message);
+        if (isMounted) {
           setUser(null);
           setLoading(false);
         }
       });
-    return () => { cancelled = true; };
+  
+    return () => { isMounted = false; };
   }, []);
-
   // 3. FIRST: Check if we are still loading. 
   // This prevents the 'user' check from running too early.
   if (loading) {
