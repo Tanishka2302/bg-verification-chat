@@ -6,25 +6,20 @@ import Login from "./pages/Login";
 import App from "./App";
 
 /* ================= PROTECTED ROUTE ================= */
+/* ================= PROTECTED ROUTE ================= */
 function ProtectedRoute({ children }) {
-  // 1. Declare states FIRST
+  // 1. ALWAYS declare your states at the very top
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(undefined);
 
-  // 2. Get the token from URL
+  // 2. Get the token
   const params = new URLSearchParams(window.location.search);
   const inviteToken = params.get("token");
 
   useEffect(() => {
     let cancelled = false;
-
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
-      credentials: "include",
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error("unauthorized");
-        return res.json();
-      })
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!cancelled) {
           setUser(data);
@@ -37,31 +32,23 @@ function ProtectedRoute({ children }) {
           setLoading(false);
         }
       });
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  // 3. Logic: If we are still fetching, show the loader
+  // 3. FIRST: Check if we are still loading. 
+  // This prevents the 'user' check from running too early.
   if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center text-gray-500 font-medium">
-        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-3"></div>
-        Checking session...
-      </div>
-    );
+    return <div className="h-screen flex items-center justify-center">Checking session...</div>;
   }
 
-  // 4. Logic: Bypass login if there is an invite token OR if user is logged in
-  if (inviteToken || user) {
+  // 4. SECOND: Check if they are allowed in (logged in OR has invite token)
+  if (user || inviteToken) {
     return children;
   }
 
-  // 5. Logic: Only redirect if NO user AND NO token
+  // 5. FINALLY: Redirect if none of the above are true
   return <Navigate to="/login" replace />;
 }
-
 /* ================= ROOT ================= */
 function Root() {
   return (
