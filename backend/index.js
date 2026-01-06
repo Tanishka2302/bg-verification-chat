@@ -10,11 +10,12 @@ import session from "express-session";
 import authRoutes from "./routes/auth.js";
 import "./passport.js";
 import pgSession from "connect-pg-simple";
-app.set("trust proxy", 1); //
+
 const PgSession = pgSession(session);
 dotenv.config();
 
 const app = express();
+app.set("trust proxy", 1); //
 const server = http.createServer(app);
 
 /* ===============================
