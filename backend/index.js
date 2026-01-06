@@ -45,29 +45,25 @@ app.use(
 app.use(express.json());
 
 const isProduction = process.env.NODE_ENV === "production";
-
 app.use(
   session({
     store: new PgSession({
       pool,
       tableName: "session",
-      createTableIfMissing: true // Ensures the session table exists in your DB
     }),
-    secret: process.env.SESSION_SECRET || "fallback_secret",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     proxy: true, 
     cookie: {
-      // Must be true for Cross-Site cookies to work
-      secure: isProduction, 
-      // 'none' is required because Vercel and Render are different domains
-      sameSite: isProduction ? "none" : "lax", 
+      // FORCE these to true/none for Render to Vercel communication
+      secure: true, 
+      sameSite: "none", 
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
     },
   })
 );
-
 app.use(passport.initialize());
 app.use(passport.session());
 
