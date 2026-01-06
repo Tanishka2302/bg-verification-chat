@@ -7,14 +7,16 @@ import App from "./App";
 
 /* ================= PROTECTED ROUTE ================= */
 /* ================= PROTECTED ROUTE ================= */
+/* ================= PROTECTED ROUTE ================= */
 function ProtectedRoute({ children }) {
-  // 1. ALWAYS declare your states at the very top
+  // 1. Declare states at the top
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(undefined);
+  const [user, setUser] = useState(null);
 
   // 2. Get the token
   const params = new URLSearchParams(window.location.search);
   const inviteToken = params.get("token");
+
   useEffect(() => {
     let isMounted = true;
   
@@ -22,10 +24,10 @@ function ProtectedRoute({ children }) {
       credentials: "include", // Required to send the session cookie
     })
       .then((res) => {
-        // If 401, just return null (not an app crash, just not logged in)
+        // If 401, they are just not logged in
         if (res.status === 401) return null;
         if (!res.ok) throw new Error("Server Error");
-        return res.json();
+        return res.json(); // Must convert to JSON
       })
       .then((data) => {
         if (isMounted) {
@@ -34,7 +36,8 @@ function ProtectedRoute({ children }) {
         }
       })
       .catch((err) => {
-        console.warn("User not authenticated:", err.message);
+        // This catches real network errors, not 401s
+        console.warn("Auth check failed:", err.message);
         if (isMounted) {
           setUser(null);
           setLoading(false);
@@ -43,18 +46,18 @@ function ProtectedRoute({ children }) {
   
     return () => { isMounted = false; };
   }, []);
-  // 3. FIRST: Check if we are still loading. 
-  // This prevents the 'user' check from running too early.
+
+  // 3. FIRST: Check if still loading
   if (loading) {
     return <div className="h-screen flex items-center justify-center">Checking session...</div>;
   }
 
-  // 4. SECOND: Check if they are allowed in (logged in OR has invite token)
+  // 4. SECOND: Allow if user exists OR inviteToken is present
   if (user || inviteToken) {
     return children;
   }
 
-  // 5. FINALLY: Redirect if none of the above are true
+  // 5. FINALLY: Redirect to login
   return <Navigate to="/login" replace />;
 }
 /* ================= ROOT ================= */
