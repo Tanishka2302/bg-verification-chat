@@ -27,7 +27,7 @@ app.set("trust proxy", 1);
 const allowedOrigins = [
   "http://localhost:5173",
   "https://bg-verification-chat.vercel.app",
-  "https://your-frontend-name.onrender.com",
+  "https://bg-verification-chat-frontend.onrender.com",
 ];
 
 app.use(

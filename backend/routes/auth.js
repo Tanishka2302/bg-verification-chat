@@ -9,14 +9,7 @@ const router = express.Router();
 
 // 1. Start Google login
 // We pass the scope here explicitly to satisfy Google's requirements
-router.get(
-  "/google",
-  passport.authenticate("google", { 
-    scope: ["profile", "email"],
-    prompt: "select_account" // Forces the account chooser to appear
-  })
-);
-
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 // 2. Google callback
 router.get(
   "/google/callback",
