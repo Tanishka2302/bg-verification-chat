@@ -7,15 +7,13 @@ import App from "./App";
 
 /* ================= PROTECTED ROUTE ================= */
 function ProtectedRoute({ children }) {
-  const params = new URLSearchParams(window.location.search);
-const inviteToken = params.get("token");
-
-// Allow access if user exists OR if there is an invite token
-if (user === null && !inviteToken) {
-  return <Navigate to="/login" replace />;
-}
+  // 1. Declare states FIRST
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(undefined);
+
+  // 2. Get the token from URL
+  const params = new URLSearchParams(window.location.search);
+  const inviteToken = params.get("token");
 
   useEffect(() => {
     let cancelled = false;
@@ -45,19 +43,23 @@ if (user === null && !inviteToken) {
     };
   }, []);
 
+  // 3. Logic: If we are still fetching, show the loader
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center text-gray-500">
-        Checking session…
+      <div className="h-screen flex items-center justify-center text-gray-500 font-medium">
+        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-3"></div>
+        Checking session...
       </div>
     );
   }
 
-  if (user === null) {
-    return <Navigate to="/login" replace />;
+  // 4. Logic: Bypass login if there is an invite token OR if user is logged in
+  if (inviteToken || user) {
+    return children;
   }
 
-  return children;
+  // 5. Logic: Only redirect if NO user AND NO token
+  return <Navigate to="/login" replace />;
 }
 
 /* ================= ROOT ================= */
@@ -65,11 +67,8 @@ function Root() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
-
-        {/* Protected Routes */}
         <Route 
           path="/verify" 
           element={
