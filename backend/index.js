@@ -10,7 +10,7 @@ import session from "express-session";
 import authRoutes from "./routes/auth.js";
 import "./passport.js";
 import pgSession from "connect-pg-simple";
-
+app.set("trust proxy", 1); //
 const PgSession = pgSession(session);
 dotenv.config();
 
@@ -22,7 +22,7 @@ const server = http.createServer(app);
 ================================ */
 
 // Trusting the proxy is mandatory for Render/Vercel to handle HTTPS cookies
-app.set("trust proxy", 1); 
+
 
 const allowedOrigins = [
   "http://localhost:5173",
