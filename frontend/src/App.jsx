@@ -29,21 +29,27 @@ function App() {
   const [user, setUser] = useState(null);
 
   /* ================= 1. AUTH CHECK (First Priority) ================= */
-  useEffect(() => {
-    fetch(`${BACKEND_URL}/auth/me`, {
-      credentials: "include", 
+ /* ================= 1. AUTH CHECK ================= */
+useEffect(() => {
+  console.log("Checking session at:", `${BACKEND_URL}/auth/me`); // Add this
+  fetch(`${BACKEND_URL}/auth/me`, {
+    credentials: "include", 
+  })
+    .then((res) => {
+      console.log("Auth Response Status:", res.status); // Add this
+      return res.ok ? res.json() : null;
     })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        setUser(data);
-        setAuthChecked(true);
-      })
-      .catch(() => {
-        setUser(null);
-        setAuthChecked(true);
-      });
-  }, []);
-
+    .then((data) => {
+      console.log("User data received:", data); // Add this
+      setUser(data);
+      setAuthChecked(true);
+    })
+    .catch((err) => {
+      console.error("Auth fetch error:", err); // Add this
+      setUser(null);
+      setAuthChecked(true);
+    });
+}, []);
   /* ================= 2. SOCKET SETUP ================= */
   useEffect(() => {
     if (!authChecked) return;
