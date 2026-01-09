@@ -9,50 +9,47 @@ import App from "./App";
 /* ================= PROTECTED ROUTE ================= */
 function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
-
-  const params = new URLSearchParams(window.location.search);
-  const inviteToken = params.get("token");
+  const [user, setUser] = useState(undefined); // 👈 important
 
   useEffect(() => {
-    let isMounted = true;
-  
-    fetch("https://bg-verification-chat.onrender.com/auth/me", {
-      credentials: "include", // Essential to send the connect.sid cookie
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
+      credentials: "include",
     })
-      .then((res) => {
-        if (res.status === 401) return null; // 401 is normal if logged out
-        if (!res.ok) throw new Error("Server error");
-        return res.json(); // CRITICAL: Convert response to JSON
-      })
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (isMounted) {
-          setUser(data);
-          setLoading(false);
-        }
+        setUser(data);
+        setLoading(false);
       })
-      .catch((err) => {
-        if (isMounted) {
-          setUser(null);
-          setLoading(false);
-        }
+      .catch(() => {
+        setUser(null);
+        setLoading(false);
       });
-  
-    return () => { isMounted = false; };
   }, []);
 
   if (loading) {
-    return <div className="h-screen flex items-center justify-center font-bold text-blue-600">Verifying Session...</div>;
+    return (
+      <div className="h-screen flex items-center justify-center text-gray-500">
+        Restoring session…
+      </div>
+    );
   }
 
-  // Bypass if invite token is present or user is logged in
-  if (user || inviteToken) {
-    return children;
+  // 🔥 KEY FIX: retry once instead of instant redirect
+  if (user === null) {
+    setTimeout(() => {
+      window.location.reload();
+    }, 300);
+
+    return (
+      <div className="h-screen flex items-center justify-center text-gray-500">
+        Syncing authentication…
+      </div>
+    );
   }
 
-  //return <Navigate to="/login" replace />;
-  return <Navigate to="/verify" replace />;
+  return children;
 }
+
 /* ================= ROOT ================= */
 function Root() {
   return (
