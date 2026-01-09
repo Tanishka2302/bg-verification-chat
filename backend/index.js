@@ -33,22 +33,21 @@ app.use(cors({
   },
   credentials: true, // MUST be true
 }));
-
 app.use(session({
   store: new PgSession({ pool, tableName: "session" }),
+  name: "connect.sid",
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  proxy: true, 
+  proxy: true,
   cookie: {
-    secure: true,      // REQUIRED for Render
-    sameSite: "none",  // REQUIRED for cross-site
     httpOnly: true,
-    domain: ".onrender.com",
+    secure: true,
+    sameSite: "none",
     maxAge: 24 * 60 * 60 * 1000,
-    // REMOVED 'partitioned: true' to avoid proxy conflicts
   },
 }));
+
 
 
 
