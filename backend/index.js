@@ -44,6 +44,7 @@ app.use(session({
     secure: true,      // REQUIRED for Render
     sameSite: "none",  // REQUIRED for cross-site
     httpOnly: true,
+    domain: ".onrender.com",
     maxAge: 24 * 60 * 60 * 1000,
     // REMOVED 'partitioned: true' to avoid proxy conflicts
   },
@@ -265,8 +266,8 @@ io.on("connection", (socket) => {
 /* ===============================
     SERVER START
 ================================ */
-app.use(express.static("dist"));
+
  
-app.use((req, res) => res.status(404).send("Not Found"));
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log("🚀 Server running on port", PORT));
