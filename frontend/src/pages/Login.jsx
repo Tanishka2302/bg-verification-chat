@@ -4,8 +4,8 @@ function Login() {
   const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
   
   // ✅ FIX: Use the cleaned URL to prevent double slashes (e.g., api.com//auth/google)
-  //const cleanBackendUrl = backendUrl.replace(/\/$/, ""); 
-  //const loginUrl = `${cleanBackendUrl}/auth/google`;
+  const cleanBackendUrl = backendUrl.replace(/\/$/, ""); 
+  const loginUrl = `${cleanBackendUrl}/auth/google`;
 
   useEffect(() => {
     console.log("Current Backend URL:", backendUrl);
