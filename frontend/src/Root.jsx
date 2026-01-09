@@ -59,19 +59,13 @@ function ProtectedRoute({ children }) {
 function Root() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route 
-          path="/verify" 
-          element={
-            <ProtectedRoute>
-              <App />
-            </ProtectedRoute>
-          } 
-        />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
+      {/* ✅ NO PROTECTED ROUTE */}
+      <Route path="/verify" element={<App />} />
+    </Routes>
+  </BrowserRouter>
   );
 }
 
