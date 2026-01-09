@@ -5,6 +5,7 @@ import Landing from "./Landing";
 import Login from "./pages/Login";
 import App from "./App";
 
+
 /* ================= PROTECTED ROUTE ================= */
 function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
@@ -49,7 +50,8 @@ function ProtectedRoute({ children }) {
     return children;
   }
 
-  return <Navigate to="/login" replace />;
+  //return <Navigate to="/login" replace />;
+  return <Navigate to="/verify" replace />;
 }
 /* ================= ROOT ================= */
 function Root() {
