@@ -9,7 +9,8 @@ import App from "./App";
 /* ================= PROTECTED ROUTE ================= */
 function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(undefined); // 👈 important
+  const [user, setUser] = useState(undefined);
+  const retriedRef = useRef(false); // 👈 guard
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
@@ -29,22 +30,26 @@ function ProtectedRoute({ children }) {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center text-gray-500">
-        Restoring session…
+        Checking session…
       </div>
     );
   }
 
-  // 🔥 KEY FIX: retry once instead of instant redirect
-  if (user === null) {
-    setTimeout(() => {
-      window.location.reload();
-    }, 300);
+  // 🔥 retry ONLY ONCE
+  if (user === null && !retriedRef.current) {
+    retriedRef.current = true;
+    setTimeout(() => window.location.reload(), 300);
 
     return (
       <div className="h-screen flex items-center justify-center text-gray-500">
-        Syncing authentication…
+        Restoring authentication…
       </div>
     );
+  }
+
+  // ❌ after retry → real redirect
+  if (user === null) {
+    return <Navigate to="/login" replace />;
   }
 
   return children;
