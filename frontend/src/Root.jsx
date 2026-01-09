@@ -36,9 +36,10 @@ function ProtectedRoute({ children }) {
   }
 
   // 🔥 retry ONLY ONCE
-  if (user === null && !retriedRef.current) {
-    retriedRef.current = true;
-    setTimeout(() => window.location.reload(), 300);
+// ProtectedRoute
+if (user === null && !hasToken) {
+  return children; // allow
+}
 
     return (
       <div className="h-screen flex items-center justify-center text-gray-500">
@@ -53,7 +54,7 @@ function ProtectedRoute({ children }) {
   }
 
   return children;
-}
+
 
 /* ================= ROOT ================= */
 function Root() {
