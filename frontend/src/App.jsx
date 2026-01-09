@@ -141,7 +141,7 @@ function App() {
 
   // Phase 2: Redirect if unauthorized and no token
   if (!user && !inviteToken) {
-    window.location.href = "/login";
+    window.location.href = "/verify";
     return null;
   }
 
