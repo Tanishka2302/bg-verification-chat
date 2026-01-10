@@ -268,11 +268,11 @@ io.on("connection", (socket) => {
 // Serve frontend build
 app.use(express.static(path.join(__dirname, "dist")));
 
-// React Router fallback
-app.get((req, res) => {
+
+// React Router fallback (THIS FIXES /verify)
+app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
-
 /* ===============================
     SERVER START
 ================================ */
