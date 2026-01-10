@@ -10,11 +10,16 @@ import session from "express-session";
 import authRoutes from "./routes/auth.js";
 import "./passport.js";
 import pgSession from "connect-pg-simple";
+import path from "path";
+import { fileURLToPath } from "url";
+
 const app = express();
 // MUST BE AT THE VERY TOP
 app.set("trust proxy", 1); 
 dotenv.config(); // Load this early
 const PgSession = pgSession(session);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -48,8 +53,7 @@ app.use(session({
   },
 }));
 
-
-
+app.use(express.static(path.join(__dirname, "dist")));
 
 
 const server = http.createServer(app);
@@ -262,6 +266,14 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => console.log("🔴 Socket disconnected:", socket.id));
 });
 
+// Serve frontend build
+app.use(express.static(path.join(__dirname, "dist")));
+
+// React Router fallback
+app.get((req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
+
 /* ===============================
     SERVER START
 ================================ */
@@ -270,17 +282,4 @@ io.on("connection", (socket) => {
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log("🚀 Server running on port", PORT));
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Serve frontend
-app.use(express.static(path.join(__dirname, "dist")));
-
-// React router fallback
-app.use((req, res) => {
-  res.status(404).send("Not Found");
-});
 
