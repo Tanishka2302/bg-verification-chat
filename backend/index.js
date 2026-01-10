@@ -28,9 +28,10 @@ const allowedOrigins = [
   "https://bg-verification-chat.onrender.com" // Add backend URL too
 ];
 app.use(cors({
-  origin: "https://bg-verification-chat-frontend.onrender.com",
+  origin: allowedOrigins,
   credentials: true,
 }));
+
 
 app.set("trust proxy", 1);
 
@@ -122,10 +123,8 @@ async function updateVerificationStatus(roomId) {
 /* ===============================
     REST API
 ================================ */
-// Add this near your other routes
-app.get('/', (req, res) => {
-  res.send('Backend is running successfully!');
-});
+
+
 app.get("/rooms/:roomId/messages", async (req, res) => {
   try {
     const result = await pool.query(
