@@ -12,6 +12,8 @@ import "./passport.js";
 import pgSession from "connect-pg-simple";
 import path from "path";
 import { fileURLToPath } from "url";
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const app = express();
 // MUST BE AT THE VERY TOP

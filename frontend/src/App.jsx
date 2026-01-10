@@ -173,8 +173,14 @@ if (authChecked && user === null && !inviteToken) {
         credentials: "include",
         body: JSON.stringify({ roomId }),
       });
-  
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+      
       const data = await res.json();
+      
+      
   
       if (data.inviteLink) {
         await navigator.clipboard.writeText(data.inviteLink);
