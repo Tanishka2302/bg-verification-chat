@@ -270,9 +270,10 @@ app.use(express.static(path.join(__dirname, "dist")));
 
 
 // React Router fallback (THIS FIXES /verify)
-app.get("/*", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
 });
+
 /* ===============================
     SERVER START
 ================================ */
