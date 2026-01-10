@@ -50,6 +50,7 @@ function App() {
 
     return () => { isMounted = false; };
   }, []);
+  console.log("AUTH STATE:", { authChecked, user });
 
   /* ================= 2. SOCKET SETUP ================= */
   useEffect(() => {
@@ -140,10 +141,22 @@ function App() {
   }
 
   // Phase 2: Redirect if unauthorized and no token
-  if (!user && !inviteToken) {
-    window.location.href = "/login";
-    return null;
-  }
+ // Phase 2: Not logged in HR → show login screen (NO redirect)
+if (!user && !inviteToken) {
+  return (
+    <div className="h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <p className="text-gray-600 mb-4">You are not logged in</p>
+        <a
+          href="/login"
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg"
+        >
+          Go to Login
+        </a>
+      </div>
+    </div>
+  );
+}
 
   // Phase 3: Wait for Socket
   if (!connected) {
