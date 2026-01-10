@@ -11,53 +11,47 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const email = profile.emails?.[0]?.value;
         const googleId = profile.id;
+        const email = profile.emails[0].value;
         const name = profile.displayName;
 
-        let res = await pool.query(
+        const { rows } = await pool.query(
           "SELECT * FROM users WHERE google_id = $1",
           [googleId]
         );
 
-        if (res.rows.length === 0) {
-          res = await pool.query(
+        let user = rows[0];
+
+        if (!user) {
+          const res = await pool.query(
             `INSERT INTO users (google_id, email, name, role)
-             VALUES ($1, $2, $3, $4)
+             VALUES ($1, $2, $3, 'HR')
              RETURNING *`,
-            [googleId, email, name, "HR"]
+            [googleId, email, name]
           );
+          user = res.rows[0];
         }
 
-        return done(null, res.rows[0]);
+        return done(null, user.id); // 👈 STORE ONLY ID
       } catch (err) {
-        console.error("❌ Google Strategy Error:", err);
-        return done(err, null);
+        return done(err);
       }
     }
   )
 );
 
-// ✅ store ONLY user id in session
-passport.serializeUser((user, done) => {
-  done(null, user.id);
+passport.serializeUser((id, done) => {
+  done(null, id);
 });
 
-// ✅ fetch user fresh from DB on each request
 passport.deserializeUser(async (id, done) => {
   try {
-    const res = await pool.query(
+    const { rows } = await pool.query(
       "SELECT * FROM users WHERE id = $1",
       [id]
     );
-
-    if (res.rows.length === 0) {
-      return done(null, false);
-    }
-
-    done(null, res.rows[0]);
+    done(null, rows[0] || null);
   } catch (err) {
-    console.error("❌ Deserialize error:", err);
     done(err);
   }
 });
