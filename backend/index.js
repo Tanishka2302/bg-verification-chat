@@ -23,32 +23,31 @@ const __dirname = path.dirname(__filename);
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://bg-verification-chat.vercel.app",
+  
   "https://bg-verification-chat-frontend.onrender.com",
   "https://bg-verification-chat.onrender.com" // Add backend URL too
 ];
-
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("CORS policy violation"));
-    }
-  },
-  credentials: true, // MUST be true
+  origin: "https://bg-verification-chat-frontend.onrender.com",
+  credentials: true,
 }));
+
+app.set("trust proxy", 1);
+
 app.use(session({
-  store: new PgSession({ pool, tableName: "session" }),
   name: "connect.sid",
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   proxy: true,
+  store: new PgSession({
+    pool,
+    tableName: "session",
+  }),
   cookie: {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: true,        // REQUIRED on Render
+    sameSite: "none",    // REQUIRED cross-domain
     maxAge: 24 * 60 * 60 * 1000,
   },
 }));
