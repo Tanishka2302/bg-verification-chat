@@ -141,19 +141,11 @@ function App() {
   }
 
   // Phase 2: Redirect if unauthorized and no token
- // Phase 2: Not logged in HR → show login screen (NO redirect)
-if (!user && !inviteToken) {
+// Phase 2: wait until auth is known
+if (authChecked && user === null && !inviteToken) {
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <p className="text-gray-600 mb-4">You are not logged in</p>
-        <a
-          href="/login"
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg"
-        >
-          Go to Login
-        </a>
-      </div>
+    <div className="h-screen flex items-center justify-center bg-gray-50 text-gray-500">
+      Session expired. Please refresh or login again.
     </div>
   );
 }
