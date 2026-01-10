@@ -133,6 +133,7 @@ function App() {
     return systemQuestions[message.question_index] || null;
   };
   
+  
   /* ================= 5. PRODUCTION GUARDS ================= */
   
   // Phase 1: Wait for Auth
@@ -216,7 +217,10 @@ if (authChecked && user === null && !inviteToken) {
               <div
                 className="h-full bg-blue-600 transition-all duration-500 ease-out"
                 style={{
-                  width: `${(answeredCount / systemQuestions.length) * 100}%`,
+                  width: systemQuestions.length
+                  ? `${(answeredCount / systemQuestions.length) * 100}%`
+                  : "0%",
+                
                 }}
               />
             </div>
