@@ -270,7 +270,7 @@ app.use(express.static(path.join(__dirname, "dist")));
 
 
 // React Router fallback (THIS FIXES /verify)
-app.get("*", (req, res) => {
+app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 /* ===============================
