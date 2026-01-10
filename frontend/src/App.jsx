@@ -128,7 +128,11 @@ function App() {
     });
     setMessage("");
   };
-
+  const getRelatedQuestion = (message) => {
+    if (message.question_index == null) return null;
+    return systemQuestions[message.question_index] || null;
+  };
+  
   /* ================= 5. PRODUCTION GUARDS ================= */
   
   // Phase 1: Wait for Auth
@@ -158,6 +162,32 @@ if (authChecked && user === null && !inviteToken) {
       </div>
     );
   }
+  const createInvite = async () => {
+    if (!roomId) return;
+  
+    try {
+      const res = await fetch(`${BACKEND_URL}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ roomId }),
+      });
+  
+      const data = await res.json();
+  
+      if (data.inviteLink) {
+        await navigator.clipboard.writeText(data.inviteLink);
+        setInviteLink(data.inviteLink);
+        alert("Invite link copied to clipboard!");
+      } else {
+        alert("Failed to generate invite link");
+      }
+    } catch (err) {
+      console.error("Invite error:", err);
+      alert("Error creating invite");
+    }
+  };
+  
   
   /* ================= 6. MAIN UI ================= */
   return (
