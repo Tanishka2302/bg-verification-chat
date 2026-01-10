@@ -12,12 +12,13 @@ import "./passport.js";
 import pgSession from "connect-pg-simple";
 import path from "path";
 import { fileURLToPath } from "url";
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
 
 const app = express();
 // MUST BE AT THE VERY TOP
 app.set("trust proxy", 1); 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 dotenv.config(); // Load this early
 const PgSession = pgSession(session);
 const __filename = fileURLToPath(import.meta.url);
