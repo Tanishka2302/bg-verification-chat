@@ -12,10 +12,11 @@ function App() {
   const [roomId, setRoomId] = useState(null);
   const [chat, setChat] = useState([]);
   const [message, setMessage] = useState("");
-  const [role, setRole] = useState("HR");
+  const [role, setRole] = useState(null);
   const [connected, setConnected] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
   const [progress, setProgress] = useState({ answered: 0, status: "pending" });
+ 
 
   // --- URL & Auth States ---
   const params = new URLSearchParams(window.location.search);
