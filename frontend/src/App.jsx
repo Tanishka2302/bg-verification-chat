@@ -267,6 +267,50 @@ if (authChecked && user === null && !inviteToken) {
               )}
             </div>
           )}
+{/* MOBILE HR ACTION BAR */}
+{role === "HR" && (
+  <div className="lg:hidden px-4 py-3 bg-white border-b flex gap-3">
+    <button
+      onClick={() => {
+        localStorage.removeItem("roomId");
+        socketRef.current.emit("create_room", { candidateId });
+      }}
+      className="flex-1 py-3 rounded-xl bg-gray-900 text-white text-sm font-bold active:scale-95"
+    >
+      New Session
+    </button>
+
+    {roomId && (
+      <button
+        onClick={createInvite}
+        className="flex-1 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-bold active:scale-95"
+      >
+        Invite
+      </button>
+    )}
+  </div>
+)}
+{/* MOBILE PROGRESS */}
+<div className="lg:hidden px-4 py-4 bg-white border-b">
+  <div className="flex justify-between text-xs font-semibold text-gray-500 mb-2">
+    <span>Progress</span>
+    <span>
+      {answeredCount}/{systemQuestions.length}
+    </span>
+  </div>
+
+  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+    <div
+      className="h-full bg-blue-600 transition-all"
+      style={{
+        width: systemQuestions.length
+          ? `${(answeredCount / systemQuestions.length) * 100}%`
+          : "0%",
+      }}
+    />
+  </div>
+</div>
+
 
           <div className="mt-auto pt-6 border-t text-xs font-medium text-gray-400 flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
