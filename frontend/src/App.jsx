@@ -155,6 +155,10 @@ if (authChecked && user === null && !inviteToken) {
     </div>
   );
 }
+if (authChecked && user === null && !inviteToken) {
+  window.location.href = `${BACKEND_URL}/auth/login`;
+  return null;
+}
 
   // Phase 3: Wait for Socket
   if (!connected) {
